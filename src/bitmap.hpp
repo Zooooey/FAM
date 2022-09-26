@@ -37,6 +37,7 @@
 
 #define WORD_OFFSET(i) (i >> 6)
 #define BIT_OFFSET(i) (i & 0x3f)
+using namespace std;
 
 namespace famgraph {
 class Bitmap
@@ -292,6 +293,8 @@ namespace single_buffer {
       std::array<struct ibv_sge, famgraph::WR_WINDOW_SIZE> sge_window;
       uint32_t next_range_start = range.begin();
       uint32_t const range_end = range.end();
+		cout<<"range_start:"<<next_range_start<<endl;
+		cout<<"range_end:"<<range_end<<endl;
       while (next_range_start < range_end) {
         auto const [next, wrs] = pack_window<>(my_window,
           vertex_batch,
@@ -313,6 +316,10 @@ namespace single_buffer {
           TEST_NZ(ibv_post_send((ctx->cm_ids)[worker_id]->qp, &wr, &bad_wr));
           uint32_t volatile *e_buf = edge_buf;
           for (uint32_t i = 0; i < wrs; ++i) {
+		  /*cout<<"i:"<<i<<endl;
+		  cout<<"vertex_batch[i].v_s:" <<vertex_batch[i].v_s<<endl;
+		  cout<<"vertex_batch[i].v_e:" <<vertex_batch[i].v_e<<endl;
+			cout<<"======"<<endl;*/
             for (uint32_t v = vertex_batch[i].v_s; v <= vertex_batch[i].v_e; v++) {
               uint32_t n_edges = famgraph::get_num_edges(
                 v, idx, ctx->app->num_vertices, ctx->app->num_edges);
