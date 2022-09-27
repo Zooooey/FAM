@@ -16,7 +16,7 @@
 #include <boost/log/expressions.hpp>
 
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
+//#pragma GCC diagnostic ignored "-Wold-style-cast"
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 #pragma GCC diagnostic ignored "-Wconversion"
 #include <oneapi/tbb.h>
@@ -35,8 +35,10 @@ static map<unsigned int, edges_cache *> *read_cache(ifstream &cache_file, size_t
   map<unsigned int, edges_cache *> *to_return = new map<unsigned int, edges_cache *>();
   while (cur_have_been_read_bytes < capacity) {
     cache_file.read(buff, sizeof(unsigned int) + sizeof(unsigned long));
-    unsigned int vertex_id = *(unsigned int *)buff;
-    unsigned long out_vertices_num = *((unsigned int *)buff + sizeof(unsigned int));
+    //unsigned int vertex_id = *(unsigned int *)buff;
+    unsigned int vertex_id = *reinterpret_cast<unsigned int*>(buff);
+    //unsigned long out_vertices_num = *((unsigned int *)buff + sizeof(unsigned int));
+    unsigned long out_vertices_num = *(reinterpret_cast<unsigned int *>(buff) + sizeof(unsigned int));
 
     // exceed capacity.
     if (out_vertices_num * sizeof(unsigned long) + cur_have_been_read_bytes > capacity) {
@@ -47,12 +49,11 @@ static map<unsigned int, edges_cache *> *read_cache(ifstream &cache_file, size_t
     v_struct->vertex_id = vertex_id;
     v_struct->out_vertices_num = out_vertices_num;
     v_struct->out_vertices_array = new unsigned int[out_vertices_num];
-    for (int i = 0; i < out_vertices_num; i++) {
+    for (unsigned int i = 0; i < out_vertices_num; i++) {
       cache_file.read(buff, sizeof(unsigned int));
-      *(v_struct->out_vertices_array + i) = *((unsigned int *)buff);
+      *(v_struct->out_vertices_array + i) = *(reinterpret_cast<unsigned int *>(buff));
     }
-    to_return.insert(
-      new pair<unsigned int, edges_cache *>(v_struct->vertex_id, v_struct));
+    to_return->insert({v_struct->vertex_id, v_struct});
   }
   return to_return;
 }
@@ -84,11 +85,11 @@ public:
 
   void operator()()
   {
-    auto const total_verts = c.num_vertidces;
+    auto const total_verts = c.num_vertices;
     // ccy code;
-    famgraph::Bitmap *cache_frontier = new famgraph::Bitmap();
-    famgraph::Bitmap *no_cache_frontier = new famgraph::Bitmap();
-    map<unsigned int, edges_cache *> cache_map*;
+    famgraph::Bitmap *cache_frontier = new famgraph::Bitmap(total_verts);
+    famgraph::Bitmap *no_cache_frontier = new famgraph::Bitmap(total_verts);
+    map<unsigned int, edges_cache *> *cache_map;
 
     // raed cache file here
     ifstream cache_file_instream("cache_file", ios::in | ios::binary);
@@ -127,7 +128,7 @@ public:
       //build cache_fontier and no_cache_fontier
       tbb::parallel_for(my_range, [&](auto const &range) {
         for (uint32_t i = range.begin(); i < range.end(); ++i) {
-          if(fontier->get_bit(i)){
+          if(frontier->get_bit(i)){
               if(cache_map->find(i)!=cache_map->end()){
                 cache_frontier->set_bit(i);
               }else {
