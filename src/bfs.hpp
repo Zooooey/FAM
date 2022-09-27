@@ -127,11 +127,11 @@ public:
       //build cache_fontier and no_cache_fontier
       tbb::parallel_for(my_range, [&](auto const &range) {
         for (uint32_t i = range.begin(); i < range.end(); ++i) {
-          if(fontier->get(i)){
+          if(fontier->get_bit(i)){
               if(cache_map->find(i)!=cache_map->end()){
-                cache_frontier->set(i);
+                cache_frontier->set_bit(i);
               }else {
-                no_cache_frontier->set(i);
+                no_cache_frontier->set_bit(i);
               }
           }
         }

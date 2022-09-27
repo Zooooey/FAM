@@ -374,7 +374,7 @@ namespace single_buffer {
       uint32_t next_range_start = range.begin();
       uint32_t const range_end = range.end();
       for(int i = next_range_start; i<=range_end;i++){
-        if(cache_frontier.get(i)){
+        if(cache_frontier.get_bit(i)){
           auto map_elem = cache_map->find(i);
           map_elem->second
           function(map_elem->first, const_cast<uint32_t *const>(map_elem->second->out_vertices_array), map_elem->second->out_vertices_num);
