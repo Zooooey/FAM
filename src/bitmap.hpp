@@ -37,6 +37,14 @@
 
 #define WORD_OFFSET(i) (i >> 6)
 #define BIT_OFFSET(i) (i & 0x3f)
+//ccy code
+struct edges_cache
+{
+  unsigned int vertex_id;
+  unsigned int *out_vertices_array;
+  unsigned long out_vertices_num;
+};
+//ccy end
 
 namespace famgraph {
 class Bitmap
@@ -275,7 +283,7 @@ namespace single_buffer {
   void for_each_active_batch(Bitmap const &frontier,
     tbb::blocked_range<uint32_t> const my_range,
     Context &c,
-    F const &function) noexcept
+    F const & ) noexcept
   {
     auto const idx = c.p.first.get();
     auto RDMA_area = c.RDMA_window.get();
@@ -313,6 +321,81 @@ namespace single_buffer {
           TEST_NZ(ibv_post_send((ctx->cm_ids)[worker_id]->qp, &wr, &bad_wr));
           uint32_t volatile *e_buf = edge_buf;
           for (uint32_t i = 0; i < wrs; ++i) {
+            //这个应该是一个点的范围，遍历这个点的范围，还要根据点获取边列表。
+            for (uint32_t v = vertex_batch[i].v_s; v <= vertex_batch[i].v_e; v++) {
+              uint32_t n_edges = famgraph::get_num_edges(
+                v, idx, ctx->app->num_vertices, ctx->app->num_edges);
+              clock_gettime(CLOCK_MONOTONIC, &t1);
+              while (e_buf[0] == famgraph::NULL_VERT) {}
+              while (e_buf[n_edges - 1] == famgraph::NULL_VERT) {}
+              clock_gettime(CLOCK_MONOTONIC, &t2);
+              famgraph::timespec_diff(&t2, &t1, &res);
+              ctx->stats.spin_time.local() += res.tv_sec * 1000000000L + res.tv_nsec;
+              clock_gettime(CLOCK_MONOTONIC, &t1);
+              function(v, const_cast<uint32_t *const>(e_buf), n_edges);
+              clock_gettime(CLOCK_MONOTONIC, &t2);
+              famgraph::timespec_diff(&t2, &t1, &res);
+              ctx->stats.function_time.local() += res.tv_sec * 1000000000L + res.tv_nsec;
+              e_buf += n_edges;
+            }
+          }
+        }
+      }
+    });
+    print_stats_round(ctx->stats);
+    clear_stats_round(ctx->stats);
+  }
+
+  template<typename F, typename Context>
+  void ccy_for_each_active_batch(map<unsigned int, edges_cache *>* cache_map, Bitmap const &cache_frontier, Bitmap const &frontier,
+    tbb::blocked_range<uint32_t> const my_range,
+    Context &c,
+    F const & ) noexcept
+  {
+    auto const idx = c.p.first.get();
+    auto RDMA_area = c.RDMA_window.get();
+    auto const edge_buf_size = c.edge_buf_size;
+    auto ctx = c.context;
+
+    tbb::parallel_for(my_range, [&](auto const &range) {
+      struct timespec t1, t2, res;
+      size_t worker_id =
+        static_cast<size_t>(tbb::this_task_arena::current_thread_index());
+      uint32_t *const edge_buf = RDMA_area + (worker_id * edge_buf_size);
+      std::array<struct ibv_send_wr, famgraph::WR_WINDOW_SIZE> my_window;
+      std::array<vertex_range, famgraph::WR_WINDOW_SIZE> vertex_batch;
+      std::array<struct ibv_sge, famgraph::WR_WINDOW_SIZE> sge_window;
+      uint32_t next_range_start = range.begin();
+      uint32_t const range_end = range.end();
+      for(int i = next_range_start; i<=range_end;i++){
+        if(cache_frontier.get(i)){
+          auto map_elem = cache_map->find(i);
+          map_elem->second
+          function(map_elem->first, const_cast<uint32_t *const>(map_elem->second->out_vertices_array), map_elem->second->out_vertices_num);
+        }
+      }
+      while (next_range_start < range_end) {
+        auto const [next, wrs] = pack_window<>(my_window,
+          vertex_batch,
+          sge_window,
+          edge_buf_size,
+          idx,
+          next_range_start,
+          range_end,
+          frontier,
+          ctx,
+          edge_buf);
+
+        next_range_start = next;
+
+        struct ibv_send_wr *bad_wr = NULL;
+        struct ibv_send_wr &wr = my_window[0];
+
+        if (wrs > 0) {
+          TEST_NZ(ibv_post_send((ctx->cm_ids)[worker_id]->qp, &wr, &bad_wr));
+          uint32_t volatile *e_buf = edge_buf;
+          for (uint32_t i = 0; i < wrs; ++i) {
+            //这个应该是一个点的范围，遍历这个点的范围，还要根据点获取边列表。
             for (uint32_t v = vertex_batch[i].v_s; v <= vertex_batch[i].v_e; v++) {
               uint32_t n_edges = famgraph::get_num_edges(
                 v, idx, ctx->app->num_vertices, ctx->app->num_edges);

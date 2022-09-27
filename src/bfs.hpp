@@ -25,6 +25,40 @@
 namespace bfs {
 constexpr uint32_t NULLVERT = 0xFFFFFFFF;
 
+// ccy code
+
+
+static map<unsigned int, edges_cache *> *read_cache(ifstream &cache_file, size_t capacity)
+{
+  char buff[256];
+  size_t cur_have_been_read_bytes = 0;
+  map<unsigned int, edges_cache *> *to_return = new map<unsigned int, edges_cache *>();
+  while (cur_have_been_read_bytes < capacity) {
+    cache_file.read(buff, sizeof(unsigned int) + sizeof(unsigned long));
+    unsigned int vertex_id = *(unsigned int *)buff;
+    unsigned long out_vertices_num = *((unsigned int *)buff + sizeof(unsigned int));
+
+    // exceed capacity.
+    if (out_vertices_num * sizeof(unsigned long) + cur_have_been_read_bytes > capacity) {
+      break;
+    }
+
+    edges_cache *v_struct = new edges_cache();
+    v_struct->vertex_id = vertex_id;
+    v_struct->out_vertices_num = out_vertices_num;
+    v_struct->out_vertices_array = new unsigned int[out_vertices_num];
+    for (int i = 0; i < out_vertices_num; i++) {
+      cache_file.read(buff, sizeof(unsigned int));
+      *(v_struct->out_vertices_array + i) = *((unsigned int *)buff);
+    }
+    to_return.insert(
+      new pair<unsigned int, edges_cache *>(v_struct->vertex_id, v_struct));
+  }
+  return to_return;
+}
+
+// ccy end
+
 struct bfs_vertex
 {
   std::atomic<uint32_t> parent{ NULLVERT };
@@ -50,13 +84,29 @@ public:
 
   void operator()()
   {
-    auto const total_verts = c.num_vertices;
+    auto const total_verts = c.num_vertidces;
+    // ccy code;
+    famgraph::Bitmap *cache_frontier = new famgraph::Bitmap();
+    famgraph::Bitmap *no_cache_frontier = new famgraph::Bitmap();
+    map<unsigned int, edges_cache *> cache_map*;
+
+    // raed cache file here
+    ifstream cache_file_instream("cache_file", ios::in | ios::binary);
+    if (!cache_file_instream.good()) {
+      cout << "FATAL: open file cache_file failed!" << endl;
+      exit(-1);
+    }
+    cache_map = read_cache(cache_file_instream, 66899148);
+    // ccy end;
+
     auto vtable = c.p.second.get();
     auto *frontier = &c.frontierA;
     auto *next_frontier = &c.frontierB;
     tbb::blocked_range<uint32_t> const my_range(0, total_verts);
 
     BOOST_LOG_TRIVIAL(info) << "bfs start vertex: " << start_v;
+    cache_frontier->clear();
+    no_cache_frontier->clear();
     frontier->set_bit(start_v);
     vtable[start_v].update_atomic(0);// 0 distance to self
     uint32_t round = 0;
@@ -71,8 +121,25 @@ public:
     };
     while (!frontier->is_empty()) {
       ++round;
-      famgraph::single_buffer::for_each_active_batch(
-        *frontier, my_range, c, bfs_push);
+      // ccy code
+      cache_frontier->clear();
+      no_cache_frontier->clear();
+      //build cache_fontier and no_cache_fontier
+      tbb::parallel_for(my_range, [&](auto const &range) {
+        for (uint32_t i = range.begin(); i < range.end(); ++i) {
+          if(fontier->get(i)){
+              if(cache_map->find(i)!=cache_map->end()){
+                cache_frontier->set(i);
+              }else {
+                no_cache_frontier->set(i);
+              }
+          }
+        }
+      });
+      //frontier become the struct containts no cache vertices!
+      std::swap(no_cache_frontier, frontier);
+      // ccy end
+      famgraph::single_buffer::ccy_for_each_active_batch(cache_map, *cache_frontier, *frontier, my_range, c, bfs_push);
       frontier->clear();
       std::swap(frontier, next_frontier);
     }

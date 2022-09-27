@@ -30,6 +30,7 @@ unsigned long rc_get_num_connections() { return s_ctx->connections; }
 
 void build_connection(struct rdma_cm_id *id, bool is_qp0)
 {
+  print
   struct ibv_qp_init_attr qp_attr;
 
   build_context(id->verbs);// guaranteed to only go thru on qp0
@@ -242,8 +243,8 @@ void rc_init(pre_conn_cb_fn pc,
   s_on_disconnect_cb = disc;
 }
 
-void rc_client_loop(const char *host, const char *port, struct client_context *context)
 {
+void rc_client_loop(const char *host, const char *port, struct client_context *context)
   struct addrinfo *addr;
   struct rdma_cm_id *conn = NULL;
   struct rdma_event_channel *ec = NULL;

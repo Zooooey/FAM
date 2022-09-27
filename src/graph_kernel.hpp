@@ -36,6 +36,7 @@ template<typename V> struct Generic_ctx
                                     num_vertices,
                                     ctx.vm->count("hp") ? true : false) },
       num_workers{ (*ctx.vm)["threads"].as<unsigned long>() },
+      //获取所有点里面出边做多的点的出度。
       max_out_degree{
         famgraph::get_max_out_degree(p.first.get(), num_vertices, num_edges)
       },

@@ -175,11 +175,15 @@ void encode_unweighted(fs::path const &p, fs::path const &index, fs::path const 
     uint32_t a, b;
     std::vector<std::pair<uint32_t, uint32_t>> v;
     uint32_t max_vert = 0;
+    //从文件p里读两个点a和b
     while (ifs >> a >> b){
+        //v是一个pari，输入两个点
         v.push_back(std::make_pair(a, b));
         if (make_undirected){
+            //因为是无向图，反过来的pair也要
             v.push_back(std::make_pair(b,a));
         }
+        //记录最大的点number
         max_vert = std::max(max_vert, std::max(a, b));
     }
 
@@ -254,7 +258,7 @@ int main(int argc, char * argv[])
             } else{
                 encode_unweighted(p, index, adj, vm);
             }
-        } else {
+        } else { 
             throw "Input file not found";
         }        
         return 0;
