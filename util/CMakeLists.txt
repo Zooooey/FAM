@@ -2,8 +2,8 @@ find_package(Boost REQUIRED COMPONENTS program_options log log_setup)
 find_package(TBB REQUIRED)
 find_package(oneDPL REQUIRED)
 
-add_executable(util main.cpp)
-target_link_libraries(util PRIVATE
+add_executable(edge_list_to_csr edge_list_to_csr.cpp)
+target_link_libraries(edge_list_to_csr PRIVATE
   project_options
   project_warnings
   Boost::program_options
@@ -12,7 +12,18 @@ target_link_libraries(util PRIVATE
   oneDPL
   )
 
-target_compile_definitions(util PRIVATE BOOST_LOG_DYN_LINK)
+add_executable(edge_list_to_decsr edge_list_to_decsr.cpp)
+target_link_libraries(edge_list_to_decsr PRIVATE
+  project_options
+  project_warnings
+  Boost::program_options
+  Boost::log
+  Boost::log_setup
+  oneDPL
+  )
+
+target_compile_definitions(edge_list_to_csr PRIVATE BOOST_LOG_DYN_LINK)
+target_compile_definitions(edge_list_to_decsr PRIVATE BOOST_LOG_DYN_LINK)
 
 add_executable(maxdegree maxd.cpp)
 target_link_libraries(maxdegree PRIVATE

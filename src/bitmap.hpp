@@ -37,6 +37,7 @@
 
 #define WORD_OFFSET(i) (i >> 6)
 #define BIT_OFFSET(i) (i & 0x3f)
+
 //ccy code
 struct edges_cache
 {
@@ -45,6 +46,9 @@ struct edges_cache
   unsigned long out_vertices_num;
 };
 //ccy end
+
+using namespace std;
+
 
 namespace famgraph {
 class Bitmap
@@ -300,6 +304,8 @@ namespace single_buffer {
       std::array<struct ibv_sge, famgraph::WR_WINDOW_SIZE> sge_window;
       uint32_t next_range_start = range.begin();
       uint32_t const range_end = range.end();
+		cout<<"range_start:"<<next_range_start<<endl;
+		cout<<"range_end:"<<range_end<<endl;
       while (next_range_start < range_end) {
         auto const [next, wrs] = pack_window<>(my_window,
           vertex_batch,

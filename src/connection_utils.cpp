@@ -3,6 +3,7 @@
 #include <boost/log/trivial.hpp>
 
 #include <client_runtime.hpp>
+#include <string.h>
 
 struct context
 {
@@ -36,7 +37,12 @@ void build_connection(struct rdma_cm_id *id, bool is_qp0)
   build_context(id->verbs);// guaranteed to only go thru on qp0
   build_qp_attr(&qp_attr, is_qp0);// do special handling on qp > 0
 
-  TEST_NZ(rdma_create_qp(id, s_ctx->pd, &qp_attr));
+  int ret = rdma_create_qp(id, s_ctx->pd, &qp_attr);
+	if(ret!=0){
+	printf("Value of errno: %d\n", errno);
+	printf("Error create_qp: %s\n", strerror(errno));
+	exit(-1);
+  }
 }
 
 void build_context(struct ibv_context *verbs)
@@ -85,7 +91,8 @@ void build_qp_attr(struct ibv_qp_init_attr *qp_attr, bool is_qp0)// take index a
 
   qp_attr->qp_type = IBV_QPT_RC;
 
-  qp_attr->cap.max_send_wr = 16000;// max from ibv_devinfo: max_qp_wr: 16351
+  //qp_attr->cap.max_send_wr = 16000;// max from ibv_devinfo: max_qp_wr: 16351
+  qp_attr->cap.max_send_wr = 1600;// max from ibv_devinfo: max_qp_wr: 16351
   qp_attr->cap.max_recv_wr = 10;
   qp_attr->cap.max_send_sge = 1;
   qp_attr->cap.max_recv_sge = 1;
@@ -164,12 +171,14 @@ void event_loop(struct rdma_event_channel *ec, int exit_on_disconnect)
   bool latch4 = false;
 
   while (rdma_get_cm_event(ec, &event) == 0) {
+    printf("on loop!\n");
     struct rdma_cm_event event_copy;
 
     memcpy(&event_copy, event, sizeof(*event));
     rdma_ack_cm_event(event);
 
     if (event_copy.event == RDMA_CM_EVENT_ADDR_RESOLVED) {// Runs on client
+      printf("addr resolved!\n");
       build_connection(event_copy.id, !latch0);
       BOOST_LOG_TRIVIAL(debug) << "CLIENT1";
       if (s_on_pre_conn_cb && !latch0) s_on_pre_conn_cb(event_copy.id);
@@ -178,9 +187,11 @@ void event_loop(struct rdma_event_channel *ec, int exit_on_disconnect)
 
       latch0 = true;
     } else if (event_copy.event == RDMA_CM_EVENT_ROUTE_RESOLVED) {// Runs on client
+      printf("route resolved!\n");
       TEST_NZ(rdma_connect(event_copy.id, &cm_params));
       BOOST_LOG_TRIVIAL(debug) << "CLIENT2";
     } else if (event_copy.event == RDMA_CM_EVENT_CONNECT_REQUEST) {// Runs on server
+      printf("event connectct resolved!\n");
       build_connection(event_copy.id, !latch2);
       BOOST_LOG_TRIVIAL(debug) << "SERVER1";
       if (s_on_pre_conn_cb && !latch2) s_on_pre_conn_cb(event_copy.id);
@@ -188,11 +199,13 @@ void event_loop(struct rdma_event_channel *ec, int exit_on_disconnect)
       TEST_NZ(rdma_accept(event_copy.id, &cm_params));
       latch2 = true;
     } else if (event_copy.event == RDMA_CM_EVENT_ESTABLISHED) {// Runs on both
+      printf("cm established!\n");
       if (s_on_connect_cb && !latch3) s_on_connect_cb(event_copy.id);
       BOOST_LOG_TRIVIAL(debug) << "BOTH1";
       latch3 = true;
       s_ctx->connections++;
     } else if (event_copy.event == RDMA_CM_EVENT_DISCONNECTED) {// Runs on both
+      printf("disconnected !\n");
       rdma_destroy_qp(event_copy.id);
       BOOST_LOG_TRIVIAL(debug) << "BOTH2";
       if (s_on_disconnect_cb && !latch4) s_on_disconnect_cb(event_copy.id);
@@ -202,6 +215,7 @@ void event_loop(struct rdma_event_channel *ec, int exit_on_disconnect)
       if (exit_on_disconnect) break;
       latch4 = true;
     } else {
+      printf("else !\n");
       BOOST_LOG_TRIVIAL(fatal) << cm_event_to_string(event_copy.event);
       throw std::runtime_error("RDMA event not handled");
     }

@@ -102,7 +102,7 @@ public:
     auto vtable = c.p.second.get();
     auto *frontier = &c.frontierA;
     auto *next_frontier = &c.frontierB;
-    tbb::blocked_range<uint32_t> const my_range(0, total_verts);
+    tbb::blocked_range<uint32_t> const my_range(0, total_verts, 1);
 
     BOOST_LOG_TRIVIAL(info) << "bfs start vertex: " << start_v;
     cache_frontier->clear();
