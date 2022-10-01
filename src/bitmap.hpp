@@ -287,7 +287,7 @@ namespace single_buffer {
   void for_each_active_batch(Bitmap const &frontier,
     tbb::blocked_range<uint32_t> const my_range,
     Context &c,
-    F const & ) noexcept
+    F const &function) noexcept
   {
     auto const idx = c.p.first.get();
     auto RDMA_area = c.RDMA_window.get();

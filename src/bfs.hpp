@@ -27,7 +27,6 @@ constexpr uint32_t NULLVERT = 0xFFFFFFFF;
 
 // ccy code
 
-
 static map<unsigned int, edges_cache *> *read_cache(ifstream &cache_file, size_t capacity)
 {
   char buff[256];
@@ -104,6 +103,13 @@ public:
     auto *next_frontier = &c.frontierB;
     tbb::blocked_range<uint32_t> const my_range(0, total_verts, 1);
 
+  //===========TRACE file to debug =============
+  ifstream TRACE("trace.log",ios::in);
+  if(!TRACE.good()){
+    coud<<"open file trace.log failed!"<<endl;
+  }
+  //===========================================
+
     BOOST_LOG_TRIVIAL(info) << "bfs start vertex: " << start_v;
     cache_frontier->clear();
     no_cache_frontier->clear();
@@ -121,6 +127,7 @@ public:
     };
     while (!frontier->is_empty()) {
       ++round;
+      
       // ccy code
       cache_frontier->clear();
       no_cache_frontier->clear();
@@ -128,6 +135,7 @@ public:
       tbb::parallel_for(my_range, [&](auto const &range) {
         for (uint32_t i = range.begin(); i < range.end(); ++i) {
           if(fontier->get_bit(i)){
+              TRACE<<" "<<i<<" ";
               if(cache_map->find(i)!=cache_map->end()){
                 cache_frontier->set_bit(i);
               }else {
@@ -136,6 +144,7 @@ public:
           }
         }
       });
+      TRACE<<endl;
       //frontier become the struct containts no cache vertices!
       std::swap(no_cache_frontier, frontier);
       // ccy end
