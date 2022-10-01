@@ -352,11 +352,11 @@ namespace single_buffer {
     clear_stats_round(ctx->stats);
   }
 
-  template<typename F, typename Context>
+template<typename F, typename Context>
   void ccy_for_each_active_batch(map<unsigned int, edges_cache *>* cache_map, Bitmap const &cache_frontier, Bitmap const &frontier,
     tbb::blocked_range<uint32_t> const my_range,
     Context &c,
-    F const & ) noexcept
+    F const &function ) noexcept
   {
     auto const idx = c.p.first.get();
     auto RDMA_area = c.RDMA_window.get();
@@ -373,11 +373,11 @@ namespace single_buffer {
       std::array<struct ibv_sge, famgraph::WR_WINDOW_SIZE> sge_window;
       uint32_t next_range_start = range.begin();
       uint32_t const range_end = range.end();
-      for(int i = next_range_start; i<=range_end;i++){
+      for(uint32_t i = next_range_start; i<=range_end;i++){
         if(cache_frontier.get_bit(i)){
           auto map_elem = cache_map->find(i);
-          map_elem->second
-          function(map_elem->first, const_cast<uint32_t *const>(map_elem->second->out_vertices_array), map_elem->second->out_vertices_num);
+		  uint32_t n = static_cast<uint32_t>(map_elem->second->out_vertices_num);
+          function(map_elem->first, const_cast<uint32_t *const>(map_elem->second->out_vertices_array),n);
         }
       }
       while (next_range_start < range_end) {
