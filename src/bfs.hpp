@@ -23,6 +23,8 @@
 #include <oneapi/tbb.h>
 #pragma GCC diagnostic pop
 #define USE_CACHE 0
+#define TRACE_CACHE 0
+#define TRACE_VERTEX_ID 1
 using namespace std;
 
 namespace bfs {
@@ -34,14 +36,17 @@ static map<unsigned int, edges_cache *> *read_cache(ifstream &cache_file, size_t
 {
   char buff[256];
   size_t cur_have_been_read_bytes = 0;
+  ofstream CACHE_TRACE("cache_logic.trace",ios::out);
   map<unsigned int, edges_cache *> *to_return = new map<unsigned int, edges_cache *>();
   while (cur_have_been_read_bytes < capacity) {
     cache_file.read(buff, sizeof(unsigned int) + sizeof(unsigned long));
     //unsigned int vertex_id = *(unsigned int *)buff;
     unsigned int vertex_id = *reinterpret_cast<unsigned int*>(buff);
     //unsigned long out_vertices_num = *((unsigned int *)buff + sizeof(unsigned int));
-    unsigned long out_vertices_num = *(reinterpret_cast<unsigned int *>(buff) + sizeof(unsigned int));
-	//cout<<"reading cache, vertex_id:"<<vertex_id<<" out_num:"<<out_vertices_num<<endl;
+    unsigned long out_vertices_num = *(reinterpret_cast<unsigned long *>(buff + sizeof(unsigned int)));
+ 	if(vertex_id==TRACE_VERTEX_ID&&TRACE_CACHE){
+		CACHE_TRACE<<"reading cache, vertex_id:"<<vertex_id<<" out_num:"<<out_vertices_num<<endl;
+	}
 	cur_have_been_read_bytes+= sizeof(unsigned int) + sizeof(unsigned long);
     // exceed capacity.
     if (out_vertices_num * sizeof(unsigned long) + cur_have_been_read_bytes > capacity) {
@@ -52,11 +57,21 @@ static map<unsigned int, edges_cache *> *read_cache(ifstream &cache_file, size_t
     v_struct->vertex_id = vertex_id;
     v_struct->out_vertices_num = out_vertices_num;
     v_struct->out_vertices_array = new unsigned int[out_vertices_num];
-    for (unsigned int i = 0; i < out_vertices_num; i++) {
+	if(vertex_id == TRACE_VERTEX_ID&&TRACE_CACHE){
+	  CACHE_TRACE<<"displaying target_verices of vertex_id:"<<TRACE_VERTEX_ID<<endl;
+	}
+    for (unsigned long i = 0; i < out_vertices_num; i++) {
       cache_file.read(buff, sizeof(unsigned int));
-      *(v_struct->out_vertices_array + i) = *(reinterpret_cast<unsigned int *>(buff));
+	  unsigned int target_vertex =  *(reinterpret_cast<unsigned int *>(buff));
+      *(v_struct->out_vertices_array + i) = target_vertex;
+	  if(vertex_id == TRACE_VERTEX_ID&&TRACE_CACHE){
+	  	CACHE_TRACE<<" "<<target_vertex;
+	  }
 	  cur_have_been_read_bytes+= sizeof(unsigned int) ;
     }
+	  if(vertex_id == TRACE_VERTEX_ID&&TRACE_CACHE){
+	  	CACHE_TRACE<<endl;
+	  }
     to_return->insert({v_struct->vertex_id, v_struct});
   }
   return to_return;
@@ -116,12 +131,17 @@ public:
     tbb::blocked_range<uint32_t> const my_range(0, total_verts, 1);
 
   //===========TRACE file to debug =============
-  ifstream TRACE("trace.log",ios::in);
+  ofstream TRACE("trace.log",ios::out);
   if(!TRACE.good()){
-    coud<<"open file trace.log failed!"<<endl;
+    cout<<"open file trace.log failed!"<<endl;
   }
   //===========================================
 
+	if(USE_CACHE){
+		cout<<"Using CACHE to run FAM"<<endl;
+	}else {
+		cout<<"no CAHCE for FAM"<<endl;
+	}
     BOOST_LOG_TRIVIAL(info) << "bfs start vertex: " << start_v;
 	cout<<"start vertex: "<< start_v<<endl;
     cache_frontier->clear();
@@ -156,7 +176,7 @@ public:
       //build cache_fontier and no_cache_fontier
       tbb::parallel_for(my_range, [&](auto const &range) {
         for (uint32_t i = range.begin(); i < range.end(); ++i) {
-          if(fontier->get_bit(i)){
+          if(frontier->get_bit(i)){
               TRACE<<" "<<i<<" ";
               if(cache_map->find(i)!=cache_map->end()){
                 cache_frontier->set_bit(i);
