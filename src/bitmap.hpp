@@ -166,6 +166,7 @@ auto pack_window(std::array<struct ibv_send_wr, famgraph::WR_WINDOW_SIZE> &wr_wi
     if (frontier.get_bit(v)) {
       uint32_t const n_out_edge =
         famgraph::get_num_edges(v, vtable, g_total_verts, g_total_edges);
+	 //cout<<"edges of "<< v<<" is "<<n_out_edge<<"total_edges is "<<total_edges<<endl;
       if (total_edges + n_out_edge <= edge_buf_size) {
         if (n_out_edge > 0) {
           uint32_t *const b = edge_buf + total_edges;
@@ -304,8 +305,8 @@ namespace single_buffer {
       std::array<struct ibv_sge, famgraph::WR_WINDOW_SIZE> sge_window;
       uint32_t next_range_start = range.begin();
       uint32_t const range_end = range.end();
-		cout<<"range_start:"<<next_range_start<<endl;
-		cout<<"range_end:"<<range_end<<endl;
+		//cout<<"range_start:"<<next_range_start<<endl;
+		//cout<<"range_end:"<<range_end<<endl;
       while (next_range_start < range_end) {
         auto const [next, wrs] = pack_window<>(my_window,
           vertex_batch,
@@ -329,6 +330,7 @@ namespace single_buffer {
           for (uint32_t i = 0; i < wrs; ++i) {
             //这个应该是一个点的范围，遍历这个点的范围，还要根据点获取边列表。
             for (uint32_t v = vertex_batch[i].v_s; v <= vertex_batch[i].v_e; v++) {
+			  //cout<<"vertex from rdma:"<<v<<endl;
               uint32_t n_edges = famgraph::get_num_edges(
                 v, idx, ctx->app->num_vertices, ctx->app->num_edges);
               clock_gettime(CLOCK_MONOTONIC, &t1);
@@ -375,11 +377,13 @@ template<typename F, typename Context>
       uint32_t const range_end = range.end();
       for(uint32_t i = next_range_start; i<=range_end;i++){
         if(cache_frontier.get_bit(i)){
+		  //cout<<i<<" hit cache!"<<endl;
           auto map_elem = cache_map->find(i);
 		  uint32_t n = static_cast<uint32_t>(map_elem->second->out_vertices_num);
           function(map_elem->first, const_cast<uint32_t *const>(map_elem->second->out_vertices_array),n);
         }
       }
+
       while (next_range_start < range_end) {
         auto const [next, wrs] = pack_window<>(my_window,
           vertex_batch,
@@ -403,6 +407,11 @@ template<typename F, typename Context>
           for (uint32_t i = 0; i < wrs; ++i) {
             //这个应该是一个点的范围，遍历这个点的范围，还要根据点获取边列表。
             for (uint32_t v = vertex_batch[i].v_s; v <= vertex_batch[i].v_e; v++) {
+              //CCY:What the project owner does not filter ??????
+              if(!frontier.get_bit(v)){
+				 continue;
+			  }
+			  //cout<<"ccy vertex from rdma:"<<v<<endl;
               uint32_t n_edges = famgraph::get_num_edges(
                 v, idx, ctx->app->num_vertices, ctx->app->num_edges);
               clock_gettime(CLOCK_MONOTONIC, &t1);
@@ -469,6 +478,7 @@ template<typename F, typename Context>
           uint32_t volatile *e_buf = edge_buf;
           for (uint32_t i = 0; i < wrs; ++i) {
             for (uint32_t v = vertex_batch[i].v_s; v <= vertex_batch[i].v_e; v++) {
+			  //cout<<"vertex: "<<v<<endl;
               uint32_t n_edges = famgraph::get_num_edges(
                 v, vtable, ctx->app->num_vertices, ctx->app->num_edges);
               clock_gettime(CLOCK_MONOTONIC, &t1);

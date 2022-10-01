@@ -14,6 +14,7 @@
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/log/expressions.hpp>
+#include <iostream>
 
 #pragma GCC diagnostic push
 //#pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -21,6 +22,8 @@
 #pragma GCC diagnostic ignored "-Wconversion"
 #include <oneapi/tbb.h>
 #pragma GCC diagnostic pop
+#define USE_CACHE 0
+using namespace std;
 
 namespace bfs {
 constexpr uint32_t NULLVERT = 0xFFFFFFFF;
@@ -39,7 +42,8 @@ static map<unsigned int, edges_cache *> *read_cache(ifstream &cache_file, size_t
     unsigned int vertex_id = *reinterpret_cast<unsigned int*>(buff);
     //unsigned long out_vertices_num = *((unsigned int *)buff + sizeof(unsigned int));
     unsigned long out_vertices_num = *(reinterpret_cast<unsigned int *>(buff) + sizeof(unsigned int));
-
+	//cout<<"reading cache, vertex_id:"<<vertex_id<<" out_num:"<<out_vertices_num<<endl;
+	cur_have_been_read_bytes+= sizeof(unsigned int) + sizeof(unsigned long);
     // exceed capacity.
     if (out_vertices_num * sizeof(unsigned long) + cur_have_been_read_bytes > capacity) {
       break;
@@ -52,6 +56,7 @@ static map<unsigned int, edges_cache *> *read_cache(ifstream &cache_file, size_t
     for (unsigned int i = 0; i < out_vertices_num; i++) {
       cache_file.read(buff, sizeof(unsigned int));
       *(v_struct->out_vertices_array + i) = *(reinterpret_cast<unsigned int *>(buff));
+	  cur_have_been_read_bytes+= sizeof(unsigned int) ;
     }
     to_return->insert({v_struct->vertex_id, v_struct});
   }
@@ -93,12 +98,18 @@ public:
 
     // raed cache file here
     ifstream cache_file_instream("cache_file", ios::in | ios::binary);
+    //ifstream cache_file_instream("bcs_cache_file", ios::in | ios::binary);
     if (!cache_file_instream.good()) {
       cout << "FATAL: open file cache_file failed!" << endl;
       exit(-1);
     }
     cache_map = read_cache(cache_file_instream, 66899148);
+    //cache_map = read_cache(cache_file_instream, 40);
     // ccy end;
+	cout<<"read_cache done!"<<endl;
+	/*for(auto it = cache_map->begin();it!=cache_map->end();it++){
+		cout<<"cache vertex_id"<<it->first<<endl;
+	}*/
 
     auto vtable = c.p.second.get();
     auto *frontier = &c.frontierA;
@@ -106,8 +117,11 @@ public:
     tbb::blocked_range<uint32_t> const my_range(0, total_verts, 1);
 
     BOOST_LOG_TRIVIAL(info) << "bfs start vertex: " << start_v;
+	cout<<"start vertex: "<< start_v<<endl;
     cache_frontier->clear();
     no_cache_frontier->clear();
+	frontier->clear();
+	next_frontier->clear();
     frontier->set_bit(start_v);
     vtable[start_v].update_atomic(0);// 0 distance to self
     uint32_t round = 0;
@@ -116,12 +130,19 @@ public:
       for (uint32_t i = 0; i < n; ++i) {// push out updates //make parallel
         uint32_t w = edges[i];
         if (vtable[w].update_atomic(round)) {
+		  //cout<<"round:"<<round<<endl;
+		  //cout<<"next_frontier_bit:"<<w<<endl;
           next_frontier->set_bit(w);// activate w
         }
       }
     };
     while (!frontier->is_empty()) {
       ++round;
+	  if(round==3){
+		//exit(-1);
+		}
+	  //int num = 0;
+	  //cout<<"round "<<round<<" ready go!" <<endl;
       // ccy code
       cache_frontier->clear();
       no_cache_frontier->clear();
@@ -129,6 +150,8 @@ public:
       tbb::parallel_for(my_range, [&](auto const &range) {
         for (uint32_t i = range.begin(); i < range.end(); ++i) {
           if(frontier->get_bit(i)){
+			  //++num;
+			  //cout<<i<<",";
               if(cache_map->find(i)!=cache_map->end()){
                 cache_frontier->set_bit(i);
               }else {
@@ -137,10 +160,41 @@ public:
           }
         }
       });
+
+	  //cout<<"========vertex num this round:"<<num<<"=========="<<endl;
       //frontier become the struct containts no cache vertices!
-      std::swap(no_cache_frontier, frontier);
+      if(USE_CACHE){
+      	frontier->clear();
+      	std::swap(no_cache_frontier, frontier);
+	  }
       // ccy end
-      famgraph::single_buffer::ccy_for_each_active_batch(cache_map, *cache_frontier, *frontier, my_range, c, bfs_push);
+      if(USE_CACHE){
+      	famgraph::single_buffer::ccy_for_each_active_batch(cache_map, *cache_frontier, *frontier, my_range, c, bfs_push);
+	  }else {
+		cache_frontier->clear();
+      	famgraph::single_buffer::ccy_for_each_active_batch(cache_map, *cache_frontier, *frontier, my_range, c, bfs_push);
+      	//famgraph::single_buffer::for_each_active_batch(*frontier, my_range, c, bfs_push);
+	  }
+/*
+	  cout<<"at the end of loop we check frontier and next_frontier!"<<endl;
+	  cout<<"frontier :";
+      tbb::parallel_for(my_range, [&](auto const &range) {
+        for (uint32_t i = range.begin(); i < range.end(); ++i) {
+          if(frontier->get_bit(i)){
+			  cout<<i<<",";
+          }
+        }
+      });
+	  cout<<endl<<"next frontier:";
+      tbb::parallel_for(my_range, [&](auto const &range) {
+        for (uint32_t i = range.begin(); i < range.end(); ++i) {
+          if(next_frontier->get_bit(i)){
+			  ++num;
+			  cout<<i<<",";
+          }
+        }
+      });
+	cout<<endl;*/
       frontier->clear();
       std::swap(frontier, next_frontier);
     }

@@ -136,6 +136,7 @@ void on_completion(struct ibv_wc *wc)
 
       ctx->comm_threads.push_back(std::thread(
         famgraph::comm_runtime_worker2, std::ref(ctx->cm_ids), ctx->app.get()));
+	 
 
       if (ctx->vm->count("double-buffer")) {
         throw std::runtime_error("double buffering deprecated");
