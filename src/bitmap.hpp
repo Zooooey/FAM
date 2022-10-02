@@ -176,6 +176,7 @@ auto pack_window(std::array<struct ibv_send_wr, famgraph::WR_WINDOW_SIZE> &wr_wi
           b[n_out_edge - 1] = famgraph::NULL_VERT;// sign
           if (famgraph::build_options::vertex_coalescing && batch_size > 0
               && v == vertex_batch[wrs - 1].v_e + 1) {
+			cout<<"wrs:"<<wrs<<" previous v_e:"<<v<<" current v:"<<v<<" n_out_edeg:"<<n_out_edge<<endl;
             vertex_batch[wrs - 1].v_e = v;
             sge_window[wrs - 1].length +=
               n_out_edge * static_cast<uint32_t>(sizeof(uint32_t));
