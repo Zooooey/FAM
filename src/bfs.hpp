@@ -106,8 +106,8 @@ public:
   {
     auto const total_verts = c.num_vertices;
     // ccy code;
-    famgraph::Bitmap *cache_frontier = new famgraph::Bitmap(total_verts);
-    famgraph::Bitmap *no_cache_frontier = new famgraph::Bitmap(total_verts);
+   // famgraph::Bitmap *cache_frontier = new famgraph::Bitmap(total_verts);
+    //famgraph::Bitmap *no_cache_frontier = new famgraph::Bitmap(total_verts);
     map<unsigned int, edges_cache *> *cache_map;
 
     // raed cache file here
@@ -128,7 +128,7 @@ public:
     auto vtable = c.p.second.get();
     auto *frontier = &c.frontierA;
     auto *next_frontier = &c.frontierB;
-    tbb::blocked_range<uint32_t> const my_range(0, total_verts, 1);
+    tbb::blocked_range<uint32_t> const my_range(0, total_verts);
 
   //===========TRACE file to debug =============
   ofstream TRACE("trace.log",ios::out);
@@ -144,10 +144,10 @@ public:
 	}
     BOOST_LOG_TRIVIAL(info) << "bfs start vertex: " << start_v;
 	cout<<"start vertex: "<< start_v<<endl;
-    cache_frontier->clear();
-    no_cache_frontier->clear();
+   // cache_frontier->clear();
+   // no_cache_frontier->clear();
 	frontier->clear();
-	next_frontier->clear();
+	//next_frontier->clear();
     frontier->set_bit(start_v);
     vtable[start_v].update_atomic(0);// 0 distance to self
     uint32_t round = 0;
@@ -171,7 +171,7 @@ public:
 	  //cout<<"round "<<round<<" ready go!" <<endl;
       
       // ccy code
-      cache_frontier->clear();
+      /*cache_frontier->clear();
       no_cache_frontier->clear();
       //build cache_fontier and no_cache_fontier
       tbb::parallel_for(my_range, [&](auto const &range) {
@@ -185,23 +185,22 @@ public:
               }
           }
         }
-      });
+      });*/
 
 	  //cout<<"========vertex num this round:"<<num<<"=========="<<endl;
       TRACE<<endl;
       //frontier become the struct containts no cache vertices!
-      if(USE_CACHE){
-      	frontier->clear();
-      	std::swap(no_cache_frontier, frontier);
-	  }
+      //if(USE_CACHE){
+      	//frontier->clear();
+      	//std::swap(no_cache_frontier, frontier);
+	 // }
       // ccy end
-      if(USE_CACHE){
-      	famgraph::single_buffer::ccy_for_each_active_batch(cache_map, *cache_frontier, *frontier, my_range, c, bfs_push);
-	  }else {
-		cache_frontier->clear();
-      	famgraph::single_buffer::ccy_for_each_active_batch(cache_map, *cache_frontier, *frontier, my_range, c, bfs_push);
+      if(!USE_CACHE){
+		//cache_frontier->clear();
+      cache_map.clear();
       	//famgraph::single_buffer::for_each_active_batch(*frontier, my_range, c, bfs_push);
 	  }
+    famgraph::single_buffer::ccy_for_each_active_batch(cache_map, *frontier, my_range, c, bfs_push);
 /*
 	  cout<<"at the end of loop we check frontier and next_frontier!"<<endl;
 	  cout<<"frontier :";
