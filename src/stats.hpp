@@ -24,6 +24,7 @@ struct FG_stats
   tbb::enumerable_thread_specific<long>
     cache_function_time;// 3) time spent using cache function
   tbb::enumerable_thread_specific<long> pack_window_time;// 4) time spent in pack_window
+  tbb::enumerable_thread_specific<long> cache_building_time; 
   tbb::enumerable_thread_specific<std::tuple<unsigned int, unsigned int, unsigned int>>
     wrs_verts_sends;
 
@@ -31,6 +32,7 @@ struct FG_stats
   long total_function_time{ 0 };
   long total_cache_function_time{ 0 };
   long total_pack_window_time{ 0 };
+  long total_cache_building_time{ 0 };
   unsigned int wrs{ 0 };
   unsigned int verts{ 0 };
   unsigned int sends{ 0 };
@@ -103,6 +105,11 @@ inline void clear_stats_round(FG_stats &stats)
     t = 0;
   }
 
+  for (auto &t : stats.cache_building_time) {
+    stats.total_cache_building_time += t;
+    t = 0;
+  }
+
   for (auto &p : stats.wrs_verts_sends) {
     stats.wrs += std::get<0>(p);
     stats.verts += std::get<1>(p);
@@ -127,6 +134,9 @@ inline void print_stats_summary(FG_stats const &stats)
     << "\n"
     << " Total Pack Window Time (s)"
     << static_cast<double>(stats.total_pack_window_time) / 1000000000
+    << "\n"
+    << " Total Cache Building Time (s)"
+    << static_cast<double>(stats.total_cache_building_time) / 1000000000
     << "\n"
     << " WR's: " << stats.wrs << " sends: " << stats.sends << std::endl;
 }

@@ -181,9 +181,13 @@ auto cache_pack_window(unordered_map<unsigned int, edges_cache *> *cache_map,
   uint32_t batch_size = 0;
   uint32_t wrs = 0;
   uint32_t v = range_start;
+  struct timespec t1, t2, res;
+
+
   while ((total_edges < edge_buf_size) && (wrs < famgraph::WR_WINDOW_SIZE)
          && (v < range_end)) {
     if (frontier.get_bit(v)) {
+      clock_gettime(CLOCK_MONOTONIC, &t1);
       auto it = cache_map->find(v);
       bool in_cache = it != cache_map->end();
       if (in_cache) {
@@ -192,6 +196,10 @@ auto cache_pack_window(unordered_map<unsigned int, edges_cache *> *cache_map,
         v++;
         continue;
       }
+      clock_gettime(CLOCK_MONOTONIC, &t2);
+      famgraph::timespec_diff(&t2, &t1, &res);
+      ctx->stats.cache_building_time.local() += res.tv_sec * 1000000000L + res.tv_nsec;
+
       uint32_t const n_out_edge =
         famgraph::get_num_edges(v, vtable, g_total_verts, g_total_edges);
       if (total_edges + n_out_edge <= edge_buf_size) {
@@ -216,7 +224,6 @@ auto cache_pack_window(unordered_map<unsigned int, edges_cache *> *cache_map,
               vtable[v].edge_offset * sizeof(uint32_t));
             wrs++;
           }
-
           batch_size++;
           total_edges += n_out_edge;
         }
@@ -229,7 +236,6 @@ auto cache_pack_window(unordered_map<unsigned int, edges_cache *> *cache_map,
     }
     v++;
   }
-
   std::get<0>(ctx->stats.wrs_verts_sends.local()) += wrs;
   std::get<1>(ctx->stats.wrs_verts_sends.local()) += batch_size;
   std::get<2>(ctx->stats.wrs_verts_sends.local())++;
@@ -357,7 +363,6 @@ auto pack_window2(std::array<struct ibv_send_wr, famgraph::WR_WINDOW_SIZE> &wr_w
           // batch_size++;
         }
       } else {// can't fit this, so it is the next one up
-
         std::get<0>(ctx->stats.wrs_verts_sends.local()) += wrs;
         std::get<1>(ctx->stats.wrs_verts_sends.local()) += batch_size;
         std::get<2>(ctx->stats.wrs_verts_sends.local())++;
