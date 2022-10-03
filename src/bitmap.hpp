@@ -502,7 +502,7 @@ namespace single_buffer {
           edge_buf);
         clock_gettime(CLOCK_MONOTONIC, &t2);
         famgraph::timespec_diff(&t2, &t1, &res);
-        ctx->pack_window_time.pack.local() += res.tv_sec * 1000000000L + res.tv_nsec;
+        ctx->stats.pack_window_time.local() += res.tv_sec * 1000000000L + res.tv_nsec;
         next_range_start = next;
 
         struct ibv_send_wr *bad_wr = NULL;

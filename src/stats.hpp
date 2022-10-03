@@ -20,8 +20,8 @@ struct FG_stats
 {
   tbb::enumerable_thread_specific<long> spin_time;// 1) spin time
   tbb::enumerable_thread_specific<long> function_time;// 2) time spent applying functions..
-  tbb::enumerable_thread_specific<long> cache_function_time //3) time spent using cache function
-  tbb::enumerable_thread_specific<long> pack_window_time //4) time spent in pack_window 
+  tbb::enumerable_thread_specific<long> cache_function_time; //3) time spent using cache function
+  tbb::enumerable_thread_specific<long> pack_window_time; //4) time spent in pack_window 
   tbb::enumerable_thread_specific<std::tuple<unsigned int, unsigned int, unsigned int>>
     wrs_verts_sends;
 
