@@ -19,9 +19,11 @@ namespace famgraph {
 struct FG_stats
 {
   tbb::enumerable_thread_specific<long> spin_time;// 1) spin time
-  tbb::enumerable_thread_specific<long> function_time;// 2) time spent applying functions..
-  tbb::enumerable_thread_specific<long> cache_function_time; //3) time spent using cache function
-  tbb::enumerable_thread_specific<long> pack_window_time; //4) time spent in pack_window 
+  tbb::enumerable_thread_specific<long>
+    function_time;// 2) time spent applying functions..
+  tbb::enumerable_thread_specific<long>
+    cache_function_time;// 3) time spent using cache function
+  tbb::enumerable_thread_specific<long> pack_window_time;// 4) time spent in pack_window
   tbb::enumerable_thread_specific<std::tuple<unsigned int, unsigned int, unsigned int>>
     wrs_verts_sends;
 
@@ -41,23 +43,23 @@ inline void print_stats_round(FG_stats const &stats)
   for (auto const &t : stats.spin_time) {
     BOOST_LOG_TRIVIAL(debug) << static_cast<double>(t) / 1000000000 << " ";
   }
-
+  BOOST_LOG_TRIVIAL(debug) << "\n";
   BOOST_LOG_TRIVIAL(debug) << "Function Time(s): ";
   for (auto const &t : stats.function_time) {
     BOOST_LOG_TRIVIAL(debug) << static_cast<double>(t) / 1000000000 << " ";
   }
-
+  BOOST_LOG_TRIVIAL(debug) << "\n";
   BOOST_LOG_TRIVIAL(debug) << "Cache Function Time(s): ";
   for (auto const &t : stats.cache_function_time) {
     BOOST_LOG_TRIVIAL(debug) << static_cast<double>(t) / 1000000000 << " ";
   }
-
+  BOOST_LOG_TRIVIAL(debug) << "\n";
 
   BOOST_LOG_TRIVIAL(debug) << "Pack Window Time(s): ";
   for (auto const &t : stats.pack_window_time) {
     BOOST_LOG_TRIVIAL(debug) << static_cast<double>(t) / 1000000000 << " ";
   }
-  
+
   BOOST_LOG_TRIVIAL(debug) << "\n";
 
   BOOST_LOG_TRIVIAL(debug) << "WR / send: ";
@@ -113,17 +115,16 @@ inline void clear_stats_round(FG_stats &stats)
 
 inline void print_stats_summary(FG_stats const &stats)
 {
-  BOOST_LOG_TRIVIAL(info) << "Total Spin Time (s): "
-                          << static_cast<double>(stats.total_spin_time) / 1000000000 / 10
-                          << " Total Function Time (s) "
-                          << static_cast<double>(stats.total_function_time) / 1000000000
-                               / 10
-                          << " Total Cache Function Time (s) "
-                          << static_cast<double>(stats.total_cache_function_time) / 1000000000
-                          << " Total Pack Window Time (s)"
-                          << static_cast<double>(stats.total_pack_window_time) / 1000000000
-                          << " WR's: " << stats.wrs << " sends: " << stats.sends
-                          << std::endl;
+  BOOST_LOG_TRIVIAL(info)
+    << "Total Spin Time (s): "
+    << static_cast<double>(stats.total_spin_time) / 1000000000 / 10
+    << " Total Function Time (s) "
+    << static_cast<double>(stats.total_function_time) / 1000000000 / 10
+    << " Total Cache Function Time (s) "
+    << static_cast<double>(stats.total_cache_function_time) / 1000000000
+    << " Total Pack Window Time (s)"
+    << static_cast<double>(stats.total_pack_window_time) / 1000000000
+    << " WR's: " << stats.wrs << " sends: " << stats.sends << std::endl;
 }
 
 inline void timespec_diff(struct timespec *a, struct timespec *b, struct timespec *result)
