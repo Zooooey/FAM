@@ -468,7 +468,6 @@ template<typename F, typename Context>
     auto RDMA_area = c.RDMA_window.get();
     auto const edge_buf_size = c.edge_buf_size;
     auto ctx = c.context;
-    vector<map<unsigned int, edges_cache*>::iterator> cache_hit_list;
 
     tbb::parallel_for(my_range, [&](auto const &range) {
       struct timespec t1, t2, res;
@@ -480,8 +479,10 @@ template<typename F, typename Context>
       std::array<struct ibv_sge, famgraph::WR_WINDOW_SIZE> sge_window;
       uint32_t next_range_start = range.begin();
       uint32_t const range_end = range.end();
-
+    
       while (next_range_start < range_end) {
+        //every time we use pack_window, create a new cache_hit_list, since the cache_hit_list is used within the range of pack_window.
+        vector<map<unsigned int, edges_cache*>::iterator> cache_hit_list;
         //if vertex in cache, we don't send ramd request.
         auto const [next, wrs] = cache_pack_window<>(cache_map, cache_hit_list, my_window,
           vertex_batch,
@@ -501,7 +502,7 @@ template<typename F, typename Context>
 
         if (wrs > 0) {
           TEST_NZ(ibv_post_send((ctx->cm_ids)[worker_id]->qp, &wr, &bad_wr));
-          //Before we handle RDMA result, process cache vertex
+          //While we waiting the RDMA result, we can process cache vertex.
           if(!cache_hit_list.empty()){
             handle_cache(cache_hit_list, function);
           }
@@ -525,6 +526,7 @@ template<typename F, typename Context>
               e_buf += n_edges;
             }
           }
+          //DO NOT FROGET that all vertices in this pack_window round may all in cache.
         } else if (!cache_hit_list.empty()){
             handle_cache(cache_hit_list, function);
         }
