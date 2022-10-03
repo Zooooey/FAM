@@ -162,8 +162,8 @@ struct vertex_range
  * @return auto
  */
 template<typename V>
-auto cache_pack_window(map<unsigned int, edges_cache *> *cache_map,
-  vector<map<unsigned int, edges_cache *>::iterator> &cache_hit_list,
+auto cache_pack_window(unordered_mapunsigned int, edges_cache *> *cache_map,
+  vector<unordered_mapunsigned int, edges_cache *>::iterator> &cache_hit_list,
   std::array<struct ibv_send_wr, famgraph::WR_WINDOW_SIZE> &wr_window,
   std::array<vertex_range, famgraph::WR_WINDOW_SIZE> &vertex_batch,
   std::array<struct ibv_sge, famgraph::WR_WINDOW_SIZE> &sge_window,
@@ -458,11 +458,11 @@ namespace single_buffer {
 
 
   template<typename F>
-  void handle_cache(vector<map<unsigned int, edges_cache *>::iterator> &cache_hit_list,
+  void handle_cache(vector<unordered_mapunsigned int, edges_cache *>::iterator> &cache_hit_list,
     F const &function)
   {
     for (auto it = cache_hit_list.begin(); it != cache_hit_list.end(); it++) {
-      map<unsigned int, edges_cache *>::iterator elem = *it;
+      unordered_mapunsigned int, edges_cache *>::iterator elem = *it;
       uint32_t out_num = static_cast<uint32_t>(elem->second->out_vertices_num);
       function(elem->first,
         const_cast<uint32_t *const>(elem->second->out_vertices_array),
@@ -471,7 +471,7 @@ namespace single_buffer {
   }
 
   template<typename F, typename Context>
-  void ccy_for_each_active_batch(map<unsigned int, edges_cache *> *cache_map,
+  void ccy_for_each_active_batch(unordered_mapunsigned int, edges_cache *> *cache_map,
     Bitmap const &frontier,
     tbb::blocked_range<uint32_t> const my_range,
     Context &c,
@@ -492,7 +492,7 @@ namespace single_buffer {
       std::array<struct ibv_sge, famgraph::WR_WINDOW_SIZE> sge_window;
       uint32_t next_range_start = range.begin();
       uint32_t const range_end = range.end();
-      vector<map<unsigned int, edges_cache *>::iterator> cache_hit_list;
+      vector<unordered_mapunsigned int, edges_cache *>::iterator> cache_hit_list;
       while (next_range_start < range_end) {
 		//cout<<"start pack window ["<<next_range_start<<","<<range_end<<")"<<endl;
         //every pack_window is a batch, we clear cache list to add new cache vertex.

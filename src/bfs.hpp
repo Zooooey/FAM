@@ -35,12 +35,12 @@ constexpr uint32_t NULLVERT = 0xFFFFFFFF;
 
 // ccy code
 
-static map<unsigned int, edges_cache *> *read_cache(ifstream &cache_file, size_t capacity)
+static unordered_mapunsigned int, edges_cache *> *read_cache(ifstream &cache_file, size_t capacity)
 {
   char buff[256];
   size_t cur_have_been_read_bytes = 0;
   ofstream CACHE_TRACE("cache_logic.trace", ios::out);
-  map<unsigned int, edges_cache *> *to_return = new map<unsigned int, edges_cache *>();
+  unordered_mapunsigned int, edges_cache *> *to_return = new unordered_mapunsigned int, edges_cache *>();
   while (cache_file.good() && cur_have_been_read_bytes < capacity ) {
     cache_file.read(buff, sizeof(unsigned int) + sizeof(unsigned long));
     // unsigned int vertex_id = *(unsigned int *)buff;
@@ -111,7 +111,7 @@ public:
     // ccy code;
     // famgraph::Bitmap *cache_frontier = new famgraph::Bitmap(total_verts);
     // famgraph::Bitmap *no_cache_frontier = new famgraph::Bitmap(total_verts);
-    map<unsigned int, edges_cache *> *cache_map;
+    unordered_mapunsigned int, edges_cache *> *cache_map;
 
     // raed cache file here
     ifstream cache_file_instream("cache_file", ios::in | ios::binary);
