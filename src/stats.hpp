@@ -19,13 +19,16 @@ namespace famgraph {
 struct FG_stats
 {
   tbb::enumerable_thread_specific<long> spin_time;// 1) spin time
-  tbb::enumerable_thread_specific<long>
-    function_time;// 2) time spent applying functions..
+  tbb::enumerable_thread_specific<long> function_time;// 2) time spent applying functions..
+  tbb::enumerable_thread_specific<long> cache_function_time //3) time spent using cache function
+  tbb::enumerable_thread_specific<long> pack_window_time //4) time spent in pack_window 
   tbb::enumerable_thread_specific<std::tuple<unsigned int, unsigned int, unsigned int>>
     wrs_verts_sends;
 
   long total_spin_time{ 0 };
   long total_function_time{ 0 };
+  long total_cache_function_time{ 0 };
+  long total_pack_window_time{ 0 };
   unsigned int wrs{ 0 };
   unsigned int verts{ 0 };
   unsigned int sends{ 0 };
@@ -43,6 +46,18 @@ inline void print_stats_round(FG_stats const &stats)
   for (auto const &t : stats.function_time) {
     BOOST_LOG_TRIVIAL(debug) << static_cast<double>(t) / 1000000000 << " ";
   }
+
+  BOOST_LOG_TRIVIAL(debug) << "Cache Function Time(s): ";
+  for (auto const &t : stats.cache_function_time) {
+    BOOST_LOG_TRIVIAL(debug) << static_cast<double>(t) / 1000000000 << " ";
+  }
+
+
+  BOOST_LOG_TRIVIAL(debug) << "Pack Window Time(s): ";
+  for (auto const &t : stats.pack_window_time) {
+    BOOST_LOG_TRIVIAL(debug) << static_cast<double>(t) / 1000000000 << " ";
+  }
+  
   BOOST_LOG_TRIVIAL(debug) << "\n";
 
   BOOST_LOG_TRIVIAL(debug) << "WR / send: ";
@@ -76,6 +91,16 @@ inline void clear_stats_round(FG_stats &stats)
     t = 0;
   }
 
+  for (auto &t : stats.cache_function_time) {
+    stats.total_cache_function_time += t;
+    t = 0;
+  }
+
+  for (auto &t : stats.pack_window_time) {
+    stats.total_pack_window_time += t;
+    t = 0;
+  }
+
   for (auto &p : stats.wrs_verts_sends) {
     stats.wrs += std::get<0>(p);
     stats.verts += std::get<1>(p);
@@ -93,6 +118,10 @@ inline void print_stats_summary(FG_stats const &stats)
                           << " Total Function Time (s) "
                           << static_cast<double>(stats.total_function_time) / 1000000000
                                / 10
+                          << " Total Cache Function Time (s) "
+                          << static_cast<double>(stats.total_cache_function_time) / 1000000000
+                          << " Total Pack Window Time (s)"
+                          << static_cast<double>(stats.total_pack_window_time) / 1000000000
                           << " WR's: " << stats.wrs << " sends: " << stats.sends
                           << std::endl;
 }
