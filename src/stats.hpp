@@ -116,13 +116,13 @@ inline void clear_stats_round(FG_stats &stats)
 inline void print_stats_summary(FG_stats const &stats)
 {
   BOOST_LOG_TRIVIAL(info)
-    << "Total Spin Time (s): "
+    << "Total Spin Time (s): \n"
     << static_cast<double>(stats.total_spin_time) / 1000000000 / 10
-    << " Total Function Time (s) "
+    << " Total Function Time (s) \n"
     << static_cast<double>(stats.total_function_time) / 1000000000 / 10
-    << " Total Cache Function Time (s) "
+    << " Total Cache Function Time (s) \n"
     << static_cast<double>(stats.total_cache_function_time) / 1000000000
-    << " Total Pack Window Time (s)"
+    << " Total Pack Window Time (s)\n"
     << static_cast<double>(stats.total_pack_window_time) / 1000000000
     << " WR's: " << stats.wrs << " sends: " << stats.sends << std::endl;
 }
