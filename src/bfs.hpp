@@ -177,9 +177,10 @@ public:
             if (frontier->get_bit(i)) {
               cout << " " << i << " ";
             }
+            
           }
-          cout<<endl;
         });
+        cout<<endl;
       }
 
       // frontier become the struct containts no cache vertices!

@@ -38,14 +38,14 @@
 #define WORD_OFFSET(i) (i >> 6)
 #define BIT_OFFSET(i) (i & 0x3f)
 
-//ccy code
+// ccy code
 struct edges_cache
 {
   unsigned int vertex_id;
   unsigned int *out_vertices_array;
   unsigned long out_vertices_num;
 };
-//ccy end
+// ccy end
 
 using namespace std;
 
@@ -145,24 +145,26 @@ struct vertex_range
 
 /**
  * @brief if vertex in cache_map, we don't generate RDMA request.
- * 
- * @tparam V 
- * @param cache_map 
+ *
+ * @tparam V
+ * @param cache_map
  * @param cache_list cache hit in this pack_window
- * @param wr_window 
- * @param vertex_batch 
- * @param sge_window 
- * @param edge_buf_size 
- * @param vtable 
- * @param range_start 
- * @param range_end 
- * @param frontier 
- * @param ctx 
- * @param edge_buf 
- * @return auto 
+ * @param wr_window
+ * @param vertex_batch
+ * @param sge_window
+ * @param edge_buf_size
+ * @param vtable
+ * @param range_start
+ * @param range_end
+ * @param frontier
+ * @param ctx
+ * @param edge_buf
+ * @return auto
  */
 template<typename V>
-auto cache_pack_window(map<unsigned int, edges_cache *>* cache_map, vector<map<unsigned int,edges_cache *>::iterator> &cache_hit_list, std::array<struct ibv_send_wr, famgraph::WR_WINDOW_SIZE> &wr_window,
+auto cache_pack_window(map<unsigned int, edges_cache *> *cache_map,
+  vector<map<unsigned int, edges_cache *>::iterator> &cache_hit_list,
+  std::array<struct ibv_send_wr, famgraph::WR_WINDOW_SIZE> &wr_window,
   std::array<vertex_range, famgraph::WR_WINDOW_SIZE> &vertex_batch,
   std::array<struct ibv_sge, famgraph::WR_WINDOW_SIZE> &sge_window,
   uint32_t const edge_buf_size,
@@ -181,16 +183,17 @@ auto cache_pack_window(map<unsigned int, edges_cache *>* cache_map, vector<map<u
   uint32_t v = range_start;
   while ((total_edges < edge_buf_size) && (wrs < famgraph::WR_WINDOW_SIZE)
          && (v < range_end)) {
-    auto it = cache_map->find(v);
-    bool in_cache = it!=cache_map->end();
-    if(in_cache){
-      cache_hit_list.push_back(it);
-    }
-    //vertex in frontier and not in cache
-    if (frontier.get_bit(v) && !in_cache) {
+    if (frontier.get_bit(v)) {
+      auto it = cache_map->find(v);
+      bool in_cache = it != cache_map->end();
+      if (in_cache) { 
+        cache_hit_list.push_back(it); 
+        //This vertex is in cache, NEXT ONE!!
+        continue;
+      }
       uint32_t const n_out_edge =
         famgraph::get_num_edges(v, vtable, g_total_verts, g_total_edges);
-	 //cout<<"edges of "<< v<<" is "<<n_out_edge<<"total_edges is "<<total_edges<<endl;
+      // cout<<"edges of "<< v<<" is "<<n_out_edge<<"total_edges is "<<total_edges<<endl;
       if (total_edges + n_out_edge <= edge_buf_size) {
         if (n_out_edge > 0) {
           uint32_t *const b = edge_buf + total_edges;
@@ -200,7 +203,8 @@ auto cache_pack_window(map<unsigned int, edges_cache *>* cache_map, vector<map<u
           b[n_out_edge - 1] = famgraph::NULL_VERT;// sign
           if (famgraph::build_options::vertex_coalescing && batch_size > 0
               && v == vertex_batch[wrs - 1].v_e + 1) {
-			//cout<<"wrs:"<<wrs<<" previous v_e:"<<v<<" current v:"<<v<<" n_out_edeg:"<<n_out_edge<<endl;
+            // cout<<"wrs:"<<wrs<<" previous v_e:"<<v<<" current v:"<<v<<"
+            // n_out_edeg:"<<n_out_edge<<endl;
             vertex_batch[wrs - 1].v_e = v;
             sge_window[wrs - 1].length +=
               n_out_edge * static_cast<uint32_t>(sizeof(uint32_t));
@@ -259,7 +263,7 @@ auto pack_window(std::array<struct ibv_send_wr, famgraph::WR_WINDOW_SIZE> &wr_wi
     if (frontier.get_bit(v)) {
       uint32_t const n_out_edge =
         famgraph::get_num_edges(v, vtable, g_total_verts, g_total_edges);
-	 //cout<<"edges of "<< v<<" is "<<n_out_edge<<"total_edges is "<<total_edges<<endl;
+      // cout<<"edges of "<< v<<" is "<<n_out_edge<<"total_edges is "<<total_edges<<endl;
       if (total_edges + n_out_edge <= edge_buf_size) {
         if (n_out_edge > 0) {
           uint32_t *const b = edge_buf + total_edges;
@@ -269,7 +273,8 @@ auto pack_window(std::array<struct ibv_send_wr, famgraph::WR_WINDOW_SIZE> &wr_wi
           b[n_out_edge - 1] = famgraph::NULL_VERT;// sign
           if (famgraph::build_options::vertex_coalescing && batch_size > 0
               && v == vertex_batch[wrs - 1].v_e + 1) {
-			//cout<<"wrs:"<<wrs<<" previous v_e:"<<v<<" current v:"<<v<<" n_out_edeg:"<<n_out_edge<<endl;
+            // cout<<"wrs:"<<wrs<<" previous v_e:"<<v<<" current v:"<<v<<"
+            // n_out_edeg:"<<n_out_edge<<endl;
             vertex_batch[wrs - 1].v_e = v;
             sge_window[wrs - 1].length +=
               n_out_edge * static_cast<uint32_t>(sizeof(uint32_t));
@@ -399,8 +404,8 @@ namespace single_buffer {
       std::array<struct ibv_sge, famgraph::WR_WINDOW_SIZE> sge_window;
       uint32_t next_range_start = range.begin();
       uint32_t const range_end = range.end();
-		//cout<<"range_start:"<<next_range_start<<endl;
-		//cout<<"range_end:"<<range_end<<endl;
+      // cout<<"range_start:"<<next_range_start<<endl;
+      // cout<<"range_end:"<<range_end<<endl;
       while (next_range_start < range_end) {
         auto const [next, wrs] = pack_window<>(my_window,
           vertex_batch,
@@ -424,7 +429,7 @@ namespace single_buffer {
           for (uint32_t i = 0; i < wrs; ++i) {
             //这个应该是一个点的范围，遍历这个点的范围，还要根据点获取边列表。
             for (uint32_t v = vertex_batch[i].v_s; v <= vertex_batch[i].v_e; v++) {
-			  //cout<<"vertex from rdma:"<<v<<endl;
+              // cout<<"vertex from rdma:"<<v<<endl;
               uint32_t n_edges = famgraph::get_num_edges(
                 v, idx, ctx->app->num_vertices, ctx->app->num_edges);
               clock_gettime(CLOCK_MONOTONIC, &t1);
@@ -449,20 +454,25 @@ namespace single_buffer {
   }
 
 
-template<typename F>
-  void handle_cache(vector<map<unsigned int, edges_cache*>::iterator> &cache_hit_list, F const &function){
-    for(auto it = cache_hit_list.begin(); it!= cache_hit_list.end(); it++){
-        map<unsigned int, edges_cache*>::iterator elem = *it;
-		uint32_t out_num = static_cast<uint32_t>(elem->second->out_vertices_num);
-        function(elem->first, const_cast<uint32_t *const>(elem->second->out_vertices_array), out_num);
+  template<typename F>
+  void handle_cache(vector<map<unsigned int, edges_cache *>::iterator> &cache_hit_list,
+    F const &function)
+  {
+    for (auto it = cache_hit_list.begin(); it != cache_hit_list.end(); it++) {
+      map<unsigned int, edges_cache *>::iterator elem = *it;
+      uint32_t out_num = static_cast<uint32_t>(elem->second->out_vertices_num);
+      function(elem->first,
+        const_cast<uint32_t *const>(elem->second->out_vertices_array),
+        out_num);
     }
   }
 
-template<typename F, typename Context>
-  void ccy_for_each_active_batch(map<unsigned int, edges_cache *>* cache_map, Bitmap const &frontier,
+  template<typename F, typename Context>
+  void ccy_for_each_active_batch(map<unsigned int, edges_cache *> *cache_map,
+    Bitmap const &frontier,
     tbb::blocked_range<uint32_t> const my_range,
     Context &c,
-    F const &function ) noexcept
+    F const &function) noexcept
   {
     auto const idx = c.p.first.get();
     auto RDMA_area = c.RDMA_window.get();
@@ -479,12 +489,14 @@ template<typename F, typename Context>
       std::array<struct ibv_sge, famgraph::WR_WINDOW_SIZE> sge_window;
       uint32_t next_range_start = range.begin();
       uint32_t const range_end = range.end();
-    
+      vector<map<unsigned int, edges_cache *>::iterator> cache_hit_list;
       while (next_range_start < range_end) {
-        //every time we use pack_window, create a new cache_hit_list, since the cache_hit_list is used within the range of pack_window.
-        vector<map<unsigned int, edges_cache*>::iterator> cache_hit_list;
-        //if vertex in cache, we don't send ramd request.
-        auto const [next, wrs] = cache_pack_window<>(cache_map, cache_hit_list, my_window,
+        //every pack_window is a batch, we clear cache list to add new cache vertex.
+        cache_hit_list.clear();
+        // if vertex in cache, we don't send ramd request.
+        auto const [next, wrs] = cache_pack_window<>(cache_map,
+          cache_hit_list,
+          my_window,
           vertex_batch,
           sge_window,
           edge_buf_size,
@@ -502,10 +514,8 @@ template<typename F, typename Context>
 
         if (wrs > 0) {
           TEST_NZ(ibv_post_send((ctx->cm_ids)[worker_id]->qp, &wr, &bad_wr));
-          //While we waiting the RDMA result, we can process cache vertex.
-          if(!cache_hit_list.empty()){
-            handle_cache(cache_hit_list, function);
-          }
+          // While we waiting the RDMA result, we can process cache vertex.
+          if (!cache_hit_list.empty()) { handle_cache(cache_hit_list, function); }
           uint32_t volatile *e_buf = edge_buf;
           for (uint32_t i = 0; i < wrs; ++i) {
             //这个应该是一个点的范围，遍历这个点的范围，还要根据点获取边列表。
@@ -526,9 +536,9 @@ template<typename F, typename Context>
               e_buf += n_edges;
             }
           }
-          //DO NOT FROGET that all vertices in this pack_window round may all in cache.
-        } else if (!cache_hit_list.empty()){
-            handle_cache(cache_hit_list, function);
+          // DO NOT FROGET that all vertices in this pack_window round may all in cache.
+        } else if (!cache_hit_list.empty()) {
+          handle_cache(cache_hit_list, function);
         }
       }
     });
@@ -579,7 +589,7 @@ template<typename F, typename Context>
           uint32_t volatile *e_buf = edge_buf;
           for (uint32_t i = 0; i < wrs; ++i) {
             for (uint32_t v = vertex_batch[i].v_s; v <= vertex_batch[i].v_e; v++) {
-			  //cout<<"vertex: "<<v<<endl;
+              // cout<<"vertex: "<<v<<endl;
               uint32_t n_edges = famgraph::get_num_edges(
                 v, vtable, ctx->app->num_vertices, ctx->app->num_edges);
               clock_gettime(CLOCK_MONOTONIC, &t1);
