@@ -166,7 +166,7 @@ public:
     while (!frontier->is_empty()) {
       ++round;
       if (DEBUG && STOP_ROUND!=0 && round == STOP_ROUND){
-        cout "STOP_ROUND was set to "<<STOP_ROUND<<", so we stop to debuging!"<<endl;
+        cout<<"STOP_ROUND was set to "<<STOP_ROUND<<", so we stop to debuging!"<<endl;
         exit(-1);
       }
 
