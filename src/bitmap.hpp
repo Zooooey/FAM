@@ -450,10 +450,11 @@ namespace single_buffer {
 
 
 template<typename F>
-  void handle_cache(vector<uint32_t> &cache_hit_list, F const &function){
+  void handle_cache(vector<map<unsigned int, edges_cache*>::iterator> &cache_hit_list, F const &function){
     for(auto it = cache_hit_list.begin(); it!= cache_hit_list.end(); it++){
         map<unsigned int, edges_cache*>::iterator elem = *it;
-        function(elem->first, const_cast<uint32_t *const>(elem->second->out_vertices_array), elem->second->out_vertices_num);
+		uint32_t out_num = static_cast<uint32_t>(elem->second->out_vertices_num);
+        function(elem->first, const_cast<uint32_t *const>(elem->second->out_vertices_array), out_num);
     }
   }
 

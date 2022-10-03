@@ -22,7 +22,7 @@
 #pragma GCC diagnostic ignored "-Wconversion"
 #include <oneapi/tbb.h>
 #pragma GCC diagnostic pop
-#define USE_CACHE 0
+#define USE_CACHE 1
 #define TRACE_CACHE 0
 #define TRACE_VERTEX_ID 1
 using namespace std;
@@ -197,7 +197,7 @@ public:
       // ccy end
       if(!USE_CACHE){
 		//cache_frontier->clear();
-      cache_map.clear();
+      cache_map->clear();
       	//famgraph::single_buffer::for_each_active_batch(*frontier, my_range, c, bfs_push);
 	  }
     famgraph::single_buffer::ccy_for_each_active_batch(cache_map, *frontier, my_range, c, bfs_push);
