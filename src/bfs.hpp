@@ -25,7 +25,7 @@
 #define USE_CACHE 1
 #define TRACE_CACHE 0
 #define TRACE_VERTEX_ID 1
-#define DEBUG 1
+#define DEBUG 0
 #define STOP_ROUND 3
 
 using namespace std;
@@ -41,7 +41,7 @@ static map<unsigned int, edges_cache *> *read_cache(ifstream &cache_file, size_t
   size_t cur_have_been_read_bytes = 0;
   ofstream CACHE_TRACE("cache_logic.trace", ios::out);
   map<unsigned int, edges_cache *> *to_return = new map<unsigned int, edges_cache *>();
-  while (cur_have_been_read_bytes < capacity) {
+  while (cache_file.good() && cur_have_been_read_bytes < capacity ) {
     cache_file.read(buff, sizeof(unsigned int) + sizeof(unsigned long));
     // unsigned int vertex_id = *(unsigned int *)buff;
     unsigned int vertex_id = *reinterpret_cast<unsigned int *>(buff);
@@ -120,7 +120,7 @@ public:
       cout << "FATAL: open file cache_file failed!" << endl;
       exit(-1);
     }
-    cache_map = read_cache(cache_file_instream, 66899148);
+    cache_map = read_cache(cache_file_instream, 166899148);
     // cache_map = read_cache(cache_file_instream, 40);
     //  ccy end;
     cout << "read_cache done!" << endl;
@@ -177,7 +177,6 @@ public:
             if (frontier->get_bit(i)) {
               cout << " " << i << " ";
             }
-            
           }
         });
         cout<<endl;
@@ -195,6 +194,7 @@ public:
         // famgraph::single_buffer::for_each_active_batch(*frontier, my_range, c,
         // bfs_push);
       }
+	  //cout<<"start bfs active_batch!"<<endl;
       famgraph::single_buffer::ccy_for_each_active_batch(
         cache_map, *frontier, my_range, c, bfs_push);
       /*

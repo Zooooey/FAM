@@ -183,12 +183,15 @@ auto cache_pack_window(map<unsigned int, edges_cache *> *cache_map,
   uint32_t v = range_start;
   while ((total_edges < edge_buf_size) && (wrs < famgraph::WR_WINDOW_SIZE)
          && (v < range_end)) {
+	//cout<<"while cache_pack_window! vertex_id"<<v<<endl;
     if (frontier.get_bit(v)) {
       auto it = cache_map->find(v);
       bool in_cache = it != cache_map->end();
       if (in_cache) { 
         cache_hit_list.push_back(it); 
+		//cout<<"vertex_id:"<<v<<" hit cache!"<<endl;
         //This vertex is in cache, NEXT ONE!!
+        v++;
         continue;
       }
       uint32_t const n_out_edge =
@@ -491,6 +494,7 @@ namespace single_buffer {
       uint32_t const range_end = range.end();
       vector<map<unsigned int, edges_cache *>::iterator> cache_hit_list;
       while (next_range_start < range_end) {
+		//cout<<"start pack window ["<<next_range_start<<","<<range_end<<")"<<endl;
         //every pack_window is a batch, we clear cache list to add new cache vertex.
         cache_hit_list.clear();
         // if vertex in cache, we don't send ramd request.
@@ -506,7 +510,8 @@ namespace single_buffer {
           frontier,
           ctx,
           edge_buf);
-
+			
+		//cout<<"After pack_window ["<<next_range_start<<","<<next<<"] cache_hit_list size: "<<cache_hit_list.size()	<<endl;
         next_range_start = next;
 
         struct ibv_send_wr *bad_wr = NULL;
