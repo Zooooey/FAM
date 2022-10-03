@@ -182,15 +182,6 @@ public:
         });
       }
 
-
-      // ccy code
-      /*cache_frontier->clear();
-      no_cache_frontier->clear();
-      //build cache_fontier and no_cache_fontier
-
-
-      // cout<<"========vertex num this round:"<<num<<"=========="<<endl;
-      TRACE << endl;
       // frontier become the struct containts no cache vertices!
       // if(USE_CACHE){
       // frontier->clear();
