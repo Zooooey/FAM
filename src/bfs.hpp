@@ -25,6 +25,9 @@
 #define USE_CACHE 1
 #define TRACE_CACHE 0
 #define TRACE_VERTEX_ID 1
+#define DEBUG 1
+#define STOP_ROUND 3
+
 using namespace std;
 
 namespace bfs {
@@ -162,28 +165,29 @@ public:
     };
     while (!frontier->is_empty()) {
       ++round;
-      if (round == 3) {
-        // exit(-1);
+      if (DEBUG && STOP_ROUND!=0 && round == STOP_ROUND){
+        cout "STOP_ROUND was set to "<<STOP_ROUND<<", so we stop to debuging!"<<endl;
+        exit(-1);
       }
-      // int num = 0;
-      // cout<<"round "<<round<<" ready go!" <<endl;
+
+      if (DEBUG && STOP_ROUND != 0) {
+        cout << "round " << round << " ready go!" << endl;
+        tbb::parallel_for(my_range, [&](auto const &range) {
+          for (uint32_t i = range.begin(); i < range.end(); ++i) {
+            if (frontier->get_bit(i)) {
+              cout << " " << i << " ";
+            }
+          }
+          cout<<endl;
+        });
+      }
+
 
       // ccy code
       /*cache_frontier->clear();
       no_cache_frontier->clear();
       //build cache_fontier and no_cache_fontier
-      tbb::parallel_for(my_range, [&](auto const &range) {
-        for (uint32_t i = range.begin(); i < range.end(); ++i) {
-          if(frontier->get_bit(i)){
-              TRACE<<" "<<i<<" ";
-              if(cache_map->find(i)!=cache_map->end()){
-                cache_frontier->set_bit(i);
-              }else {
-                no_cache_frontier->set_bit(i);
-              }
-          }
-        }
-      });*/
+
 
       // cout<<"========vertex num this round:"<<num<<"=========="<<endl;
       TRACE << endl;
