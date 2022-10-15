@@ -119,6 +119,16 @@ inline void clear_stats_round(FG_stats &stats)
     std::get<2>(p) = 0;
   }
 }
+inline void clear_all(FG_stats &stats){
+  stats.total_spin_time = 0;
+  stats.total_function_time = 0;
+  stats.total_cache_function_time = 0;
+  stats.total_pack_window_time = 0;
+  stats.total_cache_building_time = 0;
+  stats.wrs = 0;
+  stats.verts = 0;
+  stats.sends = 0 ;
+}
 
 inline void print_stats_summary(FG_stats const &stats)
 {
