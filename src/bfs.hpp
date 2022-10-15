@@ -200,6 +200,7 @@ public:
 	  famgraph::timespec_diff(&t2, &t1, &res);
 	  BOOST_LOG_TRIVIAL(info)<<"round:"<<round<<" bfs time(milli seconds):"<<(res.tv_sec * 1000000000L + res.tv_nsec)/ 1000000;
       famgraph::print_stats_summary(c.context->stats);
+	  famgraph::clear_all(c.context->stats);
     }
     BOOST_LOG_TRIVIAL(info) << "bfs rounds " << round;
   }
