@@ -175,11 +175,6 @@ public:
 	 	}
 		
 
-
-
-
-
-
       if (DEBUG && STOP_ROUND != 0 && round == STOP_ROUND) {
         cout << "STOP_ROUND was set to " << STOP_ROUND << ", so we stop to debuging!"
              << endl;
@@ -203,7 +198,7 @@ public:
 	  std::swap(frontier, next_frontier);
 	  clock_gettime(CLOCK_MONOTONIC, &t2);
 	  famgraph::timespec_diff(&t2, &t1, &res);
-	  BOOST_LOG_TRIVIAL(info)<<"round:"<<round<<" bfs time(seconds):"<<(res.tv_sec * 1000000000L + res.tv_nsec)/ 1000000;
+	  BOOST_LOG_TRIVIAL(info)<<"round:"<<round<<" bfs time(milli seconds):"<<(res.tv_sec * 1000000000L + res.tv_nsec)/ 1000000;
       famgraph::print_stats_summary(c.context->stats);
     }
     BOOST_LOG_TRIVIAL(info) << "bfs rounds " << round;

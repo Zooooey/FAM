@@ -475,7 +475,10 @@ namespace single_buffer {
     auto RDMA_area = c.RDMA_window.get();
     auto const edge_buf_size = c.edge_buf_size;
     auto ctx = c.context;
+    std::atomic<uint64_t> function_count{0};
 
+    struct timespec ccy_t1, ccy_t2, ccy_res;
+	  clock_gettime(CLOCK_MONOTONIC, &ccy_t1);
     tbb::parallel_for(my_range, [&](auto const &range) {
       struct timespec t1, t2, res;
       size_t worker_id =
@@ -538,6 +541,7 @@ namespace single_buffer {
               ctx->stats.spin_time.local() += res.tv_sec * 1000000000L + res.tv_nsec;
               clock_gettime(CLOCK_MONOTONIC, &t1);
               function(v, const_cast<uint32_t *const>(e_buf), n_edges);
+              function_count++;
               clock_gettime(CLOCK_MONOTONIC, &t2);
               famgraph::timespec_diff(&t2, &t1, &res);
               ctx->stats.function_time.local() += res.tv_sec * 1000000000L + res.tv_nsec;
@@ -555,6 +559,7 @@ namespace single_buffer {
         }
       }
     });
+    clock_gettime(CLOCK_MONOTONIC, &ccy_t2);
     print_stats_round(ctx->stats);
     clear_stats_round(ctx->stats);
   }

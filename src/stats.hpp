@@ -120,6 +120,25 @@ inline void clear_stats_round(FG_stats &stats)
   }
 }
 inline void clear_all(FG_stats &stats){
+   for (auto &t : stats.spin_time) {
+    t = 0;
+  }
+
+  for (auto &t : stats.function_time) {
+    t = 0;
+  }
+
+  for (auto &t : stats.cache_function_time) {
+    t = 0;
+  }
+
+  for (auto &t : stats.pack_window_time) {
+    t = 0;
+  }
+
+  for (auto &t : stats.cache_building_time) {
+    t = 0;
+  }
   stats.total_spin_time = 0;
   stats.total_function_time = 0;
   stats.total_cache_function_time = 0;
