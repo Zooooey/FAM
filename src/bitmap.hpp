@@ -560,6 +560,7 @@ namespace single_buffer {
       }
     });
     clock_gettime(CLOCK_MONOTONIC, &ccy_t2);
+    cout<<"function call times:" << function_count<<endl;
     print_stats_round(ctx->stats);
     clear_stats_round(ctx->stats);
   }
@@ -627,7 +628,6 @@ namespace single_buffer {
         }
       }
     });
-
     print_stats_round(ctx->stats);
     clear_stats_round(ctx->stats);
   }
