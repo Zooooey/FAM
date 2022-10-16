@@ -60,7 +60,8 @@ public:
   uint32_t const size;
   tbb::blocked_range<uint32_t> const my_range;
   unsigned long *data;
-  std::atomic<uint32_t> collide_count{ 0 }
+  std::atomic<uint32_t> collide_count{ 0 };
+  std::atomic<uint32_t> no_collide_count{ 0 };
 
   Bitmap(uint32_t const t_size) : size{ t_size }, my_range(0, WORD_OFFSET(size) + 1)
   {
@@ -75,6 +76,8 @@ public:
       for (uint32_t i = range.begin(); i < range.end(); ++i) { data[i] = 0; }
     });
     frontier_size.clear();
+  	collide_count = 0;
+  	no_collide_count = 0;
   }
   void set_all() noexcept
   {
@@ -96,7 +99,10 @@ public:
     unsigned long prev = __sync_fetch_and_or(
       data + WORD_OFFSET(i), 1ul << BIT_OFFSET(i));// change sync to atomic intrinsic
     bool const was_unset = !(prev & (1ul << BIT_OFFSET(i)));
-    if (was_unset) ++frontier_size.local();
+    if (was_unset) { 
+		++frontier_size.local();
+    	no_collide_count++;
+	}
     else collide_count++;
     return was_unset;// true if the bit was not previously set
   }

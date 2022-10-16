@@ -192,7 +192,9 @@ for (uint32_t i = range.begin(); i < range.end(); ++i) {
       clock_gettime(CLOCK_MONOTONIC, &t1);
       famgraph::single_buffer::ccy_for_each_active_batch(
         cache_map, *frontier, my_range, c, bfs_push);
-      cout<<"next_frontier collide count:"<<next_frntier.collide_count<<endl;
+      cout<<"next_frontier collide count:"<<next_frontier->collide_count<<endl;
+      cout<<"next_frontier no_collide count:"<<next_frontier->no_collide_count<<endl;
+      cout<<"next_frontier size:"<<next_frontier->num_set()<<endl;
       frontier->clear();
       std::swap(frontier, next_frontier);
       clock_gettime(CLOCK_MONOTONIC, &t2);
