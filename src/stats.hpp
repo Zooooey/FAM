@@ -18,6 +18,7 @@
 namespace famgraph {
 struct FG_stats
 {
+  tbb::enumerable_thread_specific<long> atomic_time;
   tbb::enumerable_thread_specific<long> spin_time;// 1) spin time
   tbb::enumerable_thread_specific<long>
     function_time;// 2) time spent applying functions..
@@ -28,6 +29,7 @@ struct FG_stats
   tbb::enumerable_thread_specific<std::tuple<unsigned int, unsigned int, unsigned int>>
     wrs_verts_sends;
 
+  long total_atomic_time{ 0 };
   long total_spin_time{ 0 };
   long total_function_time{ 0 };
   long total_cache_function_time{ 0 };
@@ -59,6 +61,13 @@ inline void print_stats_round(FG_stats const &stats)
 
   BOOST_LOG_TRIVIAL(debug) << "Pack Window Time(s): ";
   for (auto const &t : stats.pack_window_time) {
+    BOOST_LOG_TRIVIAL(debug) << static_cast<double>(t) / 1000000000 << " ";
+  }
+
+  BOOST_LOG_TRIVIAL(debug) << "\n";
+
+   BOOST_LOG_TRIVIAL(debug) << "Atomic Time(s): ";
+  for (auto const &t : stats.atomic_time) {
     BOOST_LOG_TRIVIAL(debug) << static_cast<double>(t) / 1000000000 << " ";
   }
 
@@ -105,6 +114,11 @@ inline void clear_stats_round(FG_stats &stats)
     t = 0;
   }
 
+   for (auto &t : stats.atomic_time) {
+    stats.total_atomic_time += t;
+    t = 0;
+  }
+
   for (auto &t : stats.cache_building_time) {
     stats.total_cache_building_time += t;
     t = 0;
@@ -139,11 +153,17 @@ inline void clear_all(FG_stats &stats){
   for (auto &t : stats.cache_building_time) {
     t = 0;
   }
+
+  for (auto &t : stats.atomic_time) {
+    t = 0;
+  }
+
   stats.total_spin_time = 0;
   stats.total_function_time = 0;
   stats.total_cache_function_time = 0;
   stats.total_pack_window_time = 0;
   stats.total_cache_building_time = 0;
+  stats.total_atomic_time = 0;
   stats.wrs = 0;
   stats.verts = 0;
   stats.sends = 0 ;
@@ -166,6 +186,9 @@ inline void print_stats_summary(FG_stats const &stats)
     << "\n"
     << " Total Cache Building Time (s)"
     << static_cast<double>(stats.total_cache_building_time) / 1000000000
+    << "\n"
+    << " Total Atomic Time (s)"
+    << static_cast<double>(stats.total_atomic_time) / 1000000000
     << "\n"
     << " WR's: " << stats.wrs << " sends: " << stats.sends << std::endl;
 }
