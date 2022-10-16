@@ -87,6 +87,7 @@ static unordered_map<unsigned int, edges_cache *> *read_cache(ifstream &cache_fi
 struct bfs_vertex
 {
   std::atomic<uint32_t> parent{ NULLVERT };
+  bool visited = false;
 
   bool update_atomic(uint32_t const t_parent) noexcept
   {// returns true if update succeeded
@@ -138,6 +139,11 @@ public:
     cout << "start vertex: " << start_v << endl;
     frontier->clear();
     frontier->set_bit(start_v);
+    tbb::parallel_for(my_range, [&](auto const &range) {
+      for (uint32_t i = range.begin(); i < range.end(); ++i) {
+          vtable[i].visited = false;
+      }
+    });
     vtable[start_v].update_atomic(0);// 0 distance to self
     uint32_t round = 0;
     struct timespec atomic_t1, atomic_t2, atomic_res;
@@ -146,12 +152,14 @@ public:
       for (uint32_t i = 0; i < n; ++i) {// push out updates //make parallel
         uint32_t w = edges[i];
         clock_gettime(CLOCK_MONOTONIC, &atomic_t1);
-        if (vtable[w].update_atomic(round)) {
+        if (!vtable[w].visited && vtable[w].update_atomic(round)) {
+          vtable[w].visited = true;
           next_frontier->set_bit(w);// activate w
         }
         clock_gettime(CLOCK_MONOTONIC, &atomic_t2);
         famgraph::timespec_diff(&atomic_t2, &atomic_t1, &atomic_res);
-        ctx->stats.atomic_time.local() += atomic_res.tv_sec * 1000000000L + atomic_res.tv_nsec;
+        c.context->stats.atomic_time.local() +=
+          atomic_res.tv_sec * 1000000000L + atomic_res.tv_nsec;
       }
     };
     while (!frontier->is_empty()) {
@@ -197,9 +205,10 @@ for (uint32_t i = range.begin(); i < range.end(); ++i) {
       clock_gettime(CLOCK_MONOTONIC, &t1);
       famgraph::single_buffer::ccy_for_each_active_batch(
         cache_map, *frontier, my_range, c, bfs_push);
-      cout<<"next_frontier collide count:"<<next_frontier->collide_count<<endl;
-      cout<<"next_frontier no_collide count:"<<next_frontier->no_collide_count<<endl;
-      cout<<"next_frontier size:"<<next_frontier->num_set()<<endl;
+      cout << "next_frontier collide count:" << next_frontier->collide_count << endl;
+      cout << "next_frontier no_collide count:" << next_frontier->no_collide_count
+           << endl;
+      cout << "next_frontier size:" << next_frontier->num_set() << endl;
       frontier->clear();
       std::swap(frontier, next_frontier);
       clock_gettime(CLOCK_MONOTONIC, &t2);
