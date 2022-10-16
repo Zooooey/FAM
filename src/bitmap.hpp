@@ -60,6 +60,7 @@ public:
   uint32_t const size;
   tbb::blocked_range<uint32_t> const my_range;
   unsigned long *data;
+  std::atomic<uint32_t> collide_count{ 0 }
 
   Bitmap(uint32_t const t_size) : size{ t_size }, my_range(0, WORD_OFFSET(size) + 1)
   {
@@ -96,6 +97,7 @@ public:
       data + WORD_OFFSET(i), 1ul << BIT_OFFSET(i));// change sync to atomic intrinsic
     bool const was_unset = !(prev & (1ul << BIT_OFFSET(i)));
     if (was_unset) ++frontier_size.local();
+    else collide_count++;
     return was_unset;// true if the bit was not previously set
   }
 
