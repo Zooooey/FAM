@@ -151,7 +151,7 @@ public:
         }
         clock_gettime(CLOCK_MONOTONIC, &atomic_t2);
         famgraph::timespec_diff(&atomic_t2, &atomic_t1, &atomic_res);
-        ctx->stats.atomic_time.local() += atomic_res.tv_sec * 1000000000L + atomic_res.tv_nsec;
+        c.context->stats.atomic_time.local() += atomic_res.tv_sec * 1000000000L + atomic_res.tv_nsec;
       }
     };
     while (!frontier->is_empty()) {
