@@ -108,9 +108,11 @@ public:
   {
     auto const total_verts = c.num_vertices;
     unordered_map<unsigned int, edges_cache *> *cache_map;
-    //ifstream cache_file_instream("cache_file", ios::in | ios::binary);
-    //ifstream cache_file_instream("/home/ccy/data_set/soc-LiveJournal1/cache_file", ios::in | ios::binary);
-    ifstream cache_file_instream("/home/ccy/data_set/soc-LiveJournal1/corder_cache_file", ios::in | ios::binary);
+    // ifstream cache_file_instream("cache_file", ios::in | ios::binary);
+    // ifstream cache_file_instream("/home/ccy/data_set/soc-LiveJournal1/cache_file",
+    // ios::in | ios::binary);
+    ifstream cache_file_instream(
+      "/home/ccy/data_set/soc-LiveJournal1/corder_cache_file", ios::in | ios::binary);
     if (!cache_file_instream.good()) {
       cout << "FATAL: open file cache_file failed!" << endl;
       exit(-1);
@@ -149,31 +151,27 @@ public:
     };
     while (!frontier->is_empty()) {
       ++round;
-	  if(round==5){
-		cout<<"stop in round 5!"<<endl;
-        	exit(-1);
-		}
-		/*uint64_t round_frontier_count = 0;
-        /tbb::parallel_for(my_range, [&](auto const &range) {
-          for (uint32_t i = range.begin(); i < range.end(); ++i) {
-            if (frontier->get_bit(i)) { round_frontier_count++; }
-          }
-        });
-		cout<<"round:"<<round<<" frontier_count:"<<round_frontier_count<<endl;*/
-	  if(round == 4){
-		ofstream round_file("round_4.txt",ios::out)	;
+      if (round == 5) {
+        cout << "stop in round 5!" << endl;
+        exit(-1);
+      }
+      /*uint64_t round_frontier_count = 0;
+/tbb::parallel_for(my_range, [&](auto const &range) {
+for (uint32_t i = range.begin(); i < range.end(); ++i) {
+  if (frontier->get_bit(i)) { round_frontier_count++; }
+}
+});
+      cout<<"round:"<<round<<" frontier_count:"<<round_frontier_count<<endl;*/
+      if (round == 4) {
+        ofstream round_file("round_4.txt", ios::out);
         tbb::parallel_for(my_range, [&](auto const &range) {
           for (uint32_t i = range.begin(); i < range.end(); ++i) {
-            if (frontier->get_bit(i)) { 
-				round_file<<i<<endl;
-			 }
+            if (frontier->get_bit(i)) { round_file << i << endl; }
           }
         });
-		round_file.close();
-		
-		
-	 	}
-		
+        round_file.close();
+      }
+
 
       if (DEBUG && STOP_ROUND != 0 && round == STOP_ROUND) {
         cout << "STOP_ROUND was set to " << STOP_ROUND << ", so we stop to debuging!"
@@ -189,18 +187,20 @@ public:
         });
         cout << endl;
       }
-	  if (!USE_CACHE) { cache_map->clear(); }
-	  struct timespec t1, t2, res;
-	  clock_gettime(CLOCK_MONOTONIC, &t1);
-	  famgraph::single_buffer::ccy_for_each_active_batch(
-					  cache_map, *frontier, my_range, c, bfs_push);
-	  frontier->clear();
-	  std::swap(frontier, next_frontier);
-	  clock_gettime(CLOCK_MONOTONIC, &t2);
-	  famgraph::timespec_diff(&t2, &t1, &res);
-	  BOOST_LOG_TRIVIAL(info)<<"round:"<<round<<" bfs time(milli seconds):"<<(res.tv_sec * 1000000000L + res.tv_nsec)/ 1000000;
+      if (!USE_CACHE) { cache_map->clear(); }
+      struct timespec t1, t2, res;
+      clock_gettime(CLOCK_MONOTONIC, &t1);
+      famgraph::single_buffer::ccy_for_each_active_batch(
+        cache_map, *frontier, my_range, c, bfs_push);
+      cout<<"next_frontier collide count:"<<next_frntier.collide_count<<endl;
+      frontier->clear();
+      std::swap(frontier, next_frontier);
+      clock_gettime(CLOCK_MONOTONIC, &t2);
+      famgraph::timespec_diff(&t2, &t1, &res);
+      BOOST_LOG_TRIVIAL(info) << "round:" << round << " bfs time(milli seconds):"
+                              << (res.tv_sec * 1000000000L + res.tv_nsec) / 1000000;
       famgraph::print_stats_summary(c.context->stats);
-	  famgraph::clear_all(c.context->stats);
+      famgraph::clear_all(c.context->stats);
     }
     BOOST_LOG_TRIVIAL(info) << "bfs rounds " << round;
   }
