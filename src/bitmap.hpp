@@ -479,8 +479,6 @@ namespace single_buffer {
     auto ctx = c.context;
     std::atomic<uint64_t> function_count{0};
 
-    struct timespec ccy_t1, ccy_t2, ccy_res;
-	  clock_gettime(CLOCK_MONOTONIC, &ccy_t1);
     tbb::parallel_for(my_range, [&](auto const &range) {
       struct timespec t1, t2, res;
       size_t worker_id =
@@ -561,7 +559,6 @@ namespace single_buffer {
         }
       }
     });
-    clock_gettime(CLOCK_MONOTONIC, &ccy_t2);
     cout<<"function call times:" << function_count<<endl;
     print_stats_round(ctx->stats);
     clear_stats_round(ctx->stats);
