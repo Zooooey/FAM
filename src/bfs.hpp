@@ -146,20 +146,20 @@ public:
     });
     vtable[start_v].update_atomic(0);// 0 distance to self
     uint32_t round = 0;
-    struct timespec atomic_t1, atomic_t2, atomic_res;
+    //struct timespec atomic_t1, atomic_t2, atomic_res;
     auto bfs_push = [&](
                       uint32_t const, uint32_t *const edges, uint32_t const n) noexcept {
       for (uint32_t i = 0; i < n; ++i) {// push out updates //make parallel
         uint32_t w = edges[i];
-        clock_gettime(CLOCK_MONOTONIC, &atomic_t1);
+        //clock_gettime(CLOCK_MONOTONIC, &atomic_t1);
         if (!vtable[w].visited && vtable[w].update_atomic(round)) {
           vtable[w].visited = true;
           next_frontier->set_bit(w);// activate w
         }
-        clock_gettime(CLOCK_MONOTONIC, &atomic_t2);
-        famgraph::timespec_diff(&atomic_t2, &atomic_t1, &atomic_res);
-        c.context->stats.atomic_time.local() +=
-          atomic_res.tv_sec * 1000000000L + atomic_res.tv_nsec;
+        //clock_gettime(CLOCK_MONOTONIC, &atomic_t2);
+        //famgraph::timespec_diff(&atomic_t2, &atomic_t1, &atomic_res);
+        //c.context->stats.atomic_time.local() +=
+         // atomic_res.tv_sec * 1000000000L + atomic_res.tv_nsec;
       }
     };
     while (!frontier->is_empty()) {
