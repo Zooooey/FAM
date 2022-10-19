@@ -30,7 +30,7 @@
 #define STOP_ROUND 3
 
 using namespace std;
-const char *CACHE_FILE_PATH = "/home/ccy/data_set/soc-LiveJournal1/corder_cache_file"；
+const char *CACHE_FILE_PATH = "/home/ccy/data_set/soc-LiveJournal1/corder_cache_file";
 
 namespace bfs {
 constexpr uint32_t NULLVERT = 0xFFFFFFFF;
