@@ -22,13 +22,15 @@
 #pragma GCC diagnostic ignored "-Wconversion"
 #include <oneapi/tbb.h>
 #pragma GCC diagnostic pop
-#define USE_CACHE 0
+#define USE_CACHE 0;
+#define CACHE_RATIO 0.2
 #define TRACE_CACHE 0
 #define TRACE_VERTEX_ID 1
 #define DEBUG 0
 #define STOP_ROUND 3
 
 using namespace std;
+const char *CACHE_FILE_PATH = "/home/ccy/data_set/soc-LiveJournal1/corder_cache_file"；
 
 namespace bfs {
 constexpr uint32_t NULLVERT = 0xFFFFFFFF;
@@ -112,13 +114,19 @@ public:
     // ifstream cache_file_instream("cache_file", ios::in | ios::binary);
     // ifstream cache_file_instream("/home/ccy/data_set/soc-LiveJournal1/cache_file",
     // ios::in | ios::binary);
-    ifstream cache_file_instream(
-      "/home/ccy/data_set/soc-LiveJournal1/corder_cache_file", ios::in | ios::binary);
+    ifstream cache_file_instream(CACHE_FILE_PATH, ios::in | ios::binary);
     if (!cache_file_instream.good()) {
       cout << "FATAL: open file cache_file failed!" << endl;
       exit(-1);
     }
-    cache_map = read_cache(cache_file_instream, 66899148);
+    cache_file_instream.seekg(0, cache_file_instream.end);
+    uint64_t cache_file_size = cache_file_instream.tellg();
+    cache_file_instream.seekg(0, cache_file_instream.beg);
+    cout<<"Cache size is "  << cache_file_size<<" bytes"<<endl;
+    cout<<"Cache ratio is "<<CACHE_RATIO<<endl;
+    uint64_t cache_pool_capacity =  floor(cache_file_size*CACHE_RATIO);
+    cout<<"Cache capacity is :"<<cache_pool_capacity<<endl;
+    cache_map = read_cache(cache_file_instream, cache_pool_capacity);
     cout << "read_cache done!" << endl;
     auto vtable = c.p.second.get();
     auto *frontier = &c.frontierA;
