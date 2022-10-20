@@ -18,6 +18,7 @@
 namespace famgraph {
 struct FG_stats
 {
+  tbb::enumerable_thread_specific<long> cache_hit;
   tbb::enumerable_thread_specific<long> atomic_time;
   tbb::enumerable_thread_specific<long> spin_time;// 1) spin time
   tbb::enumerable_thread_specific<long>
@@ -29,6 +30,7 @@ struct FG_stats
   tbb::enumerable_thread_specific<std::tuple<unsigned int, unsigned int, unsigned int>>
     wrs_verts_sends;
 
+  long total_cache_hit{ 0 };
   long total_atomic_time{ 0 };
   long total_spin_time{ 0 };
   long total_function_time{ 0 };
@@ -124,6 +126,11 @@ inline void clear_stats_round(FG_stats &stats)
     t = 0;
   }
 
+  for (auto &t : stats.cache_hit) {
+    stats.total_cache_hit += t;
+    t = 0;
+  }
+
   for (auto &p : stats.wrs_verts_sends) {
     stats.wrs += std::get<0>(p);
     stats.verts += std::get<1>(p);
@@ -158,12 +165,17 @@ inline void clear_all(FG_stats &stats){
     t = 0;
   }
 
+  for (auto &t : stats.cache_hit) {
+    t = 0;
+  }
+
   stats.total_spin_time = 0;
   stats.total_function_time = 0;
   stats.total_cache_function_time = 0;
   stats.total_pack_window_time = 0;
   stats.total_cache_building_time = 0;
   stats.total_atomic_time = 0;
+  stats.total_cache_hit = 0;
   stats.wrs = 0;
   stats.verts = 0;
   stats.sends = 0 ;
@@ -172,7 +184,7 @@ inline void clear_all(FG_stats &stats){
 inline void print_stats_summary(FG_stats const &stats)
 {
   BOOST_LOG_TRIVIAL(info)
-    << "Total Spin Time (s): "
+    << "\nTotal Spin Time (s): "
     << static_cast<double>(stats.total_spin_time) / 1000000000 / 10
     << "\n"
     << " Total Function Time (s) "
@@ -189,6 +201,9 @@ inline void print_stats_summary(FG_stats const &stats)
     << "\n"
     << " Total Atomic Time (s)"
     << static_cast<double>(stats.total_atomic_time) / 1000000000
+    << "\n"
+    << " Total Cache hit"
+    << static_cast<double>(stats.total_cache_hit)
     << "\n"
     << " WR's: " << stats.wrs << " sends: " << stats.sends << std::endl;
 }
