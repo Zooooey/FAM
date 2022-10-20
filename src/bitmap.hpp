@@ -202,6 +202,7 @@ auto cache_pack_window(unordered_map<unsigned int, edges_cache *> *cache_map,
 		//cout<<"cache hit:"<<v<<endl;
         cache_hit_list.push_back(it);
         // This vertex is in cache, NEXT ONE!!
+        ctx->stats.cache_hit.local()+=1;
         v++;
       	clock_gettime(CLOCK_MONOTONIC, &t2);
       	famgraph::timespec_diff(&t2, &t1, &res);
