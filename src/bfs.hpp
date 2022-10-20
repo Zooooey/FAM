@@ -26,7 +26,7 @@
 #define CACHE_RATIO 0.2
 #define TRACE_CACHE 0
 #define TRACE_VERTEX_ID 1
-#define DEBUG 0
+#define DEBUG 1
 #define STOP_ROUND 3
 
 using namespace std;
@@ -185,7 +185,7 @@ for (uint32_t i = range.begin(); i < range.end(); ++i) {
 }
 });
       cout<<"round:"<<round<<" frontier_count:"<<round_frontier_count<<endl;*/
-      if (round == 4) {
+      /*if (round == 4) {
         ofstream round_file("round_4.txt", ios::out);
         tbb::parallel_for(my_range, [&](auto const &range) {
           for (uint32_t i = range.begin(); i < range.end(); ++i) {
@@ -193,7 +193,7 @@ for (uint32_t i = range.begin(); i < range.end(); ++i) {
           }
         });
         round_file.close();
-      }
+      }*/
 
 
       if (DEBUG && STOP_ROUND != 0 && round == STOP_ROUND) {
@@ -215,18 +215,20 @@ for (uint32_t i = range.begin(); i < range.end(); ++i) {
       //clock_gettime(CLOCK_MONOTONIC, &t1);
       famgraph::single_buffer::ccy_for_each_active_batch(
         cache_map, *frontier, my_range, c, bfs_push);
-      //cout << "next_frontier collide count:" << next_frontier->collide_count << endl;
-      //cout << "next_frontier no_collide count:" << next_frontier->no_collide_count
-      //     << endl;
-      //cout << "next_frontier size:" << next_frontier->num_set() << endl;
+	  if(DEBUG){
+      cout << "next_frontier collide count:" << next_frontier->collide_count << endl;
+      cout << "next_frontier no_collide count:" << next_frontier->no_collide_count
+           << endl;
+      cout << "next_frontier size:" << next_frontier->num_set() << endl;
+      }
       frontier->clear();
       std::swap(frontier, next_frontier);
       //clock_gettime(CLOCK_MONOTONIC, &t2);
       //famgraph::timespec_diff(&t2, &t1, &res);
       //BOOST_LOG_TRIVIAL(info) << "round:" << round << " bfs time(milli seconds):"
        //                       << (res.tv_sec * 1000000000L + res.tv_nsec) / 1000000;
-      //famgraph::print_stats_summary(c.context->stats);
-      //famgraph::clear_all(c.context->stats);
+      famgraph::print_stats_summary(c.context->stats);
+      famgraph::clear_all(c.context->stats);
     }
     BOOST_LOG_TRIVIAL(info) << "bfs rounds " << round;
   }

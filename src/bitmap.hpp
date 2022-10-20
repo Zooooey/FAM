@@ -199,14 +199,19 @@ auto cache_pack_window(unordered_map<unsigned int, edges_cache *> *cache_map,
       auto it = cache_map->find(v);
       bool in_cache = it != cache_map->end();
       if (in_cache) {
+		cout<<"cache hit:"<<v<<endl;
         cache_hit_list.push_back(it);
         // This vertex is in cache, NEXT ONE!!
         v++;
+      	clock_gettime(CLOCK_MONOTONIC, &t2);
+      	famgraph::timespec_diff(&t2, &t1, &res);
+      	ctx->stats.cache_building_time.local() += res.tv_sec * 1000000000L + res.tv_nsec;
         continue;
-      }
-      clock_gettime(CLOCK_MONOTONIC, &t2);
-      famgraph::timespec_diff(&t2, &t1, &res);
-      ctx->stats.cache_building_time.local() += res.tv_sec * 1000000000L + res.tv_nsec;
+	  }else {
+			  clock_gettime(CLOCK_MONOTONIC, &t2);
+			  famgraph::timespec_diff(&t2, &t1, &res);
+			  ctx->stats.cache_building_time.local() += res.tv_sec * 1000000000L + res.tv_nsec;
+	  }
 
       uint32_t const n_out_edge =
         famgraph::get_num_edges(v, vtable, g_total_verts, g_total_edges);
