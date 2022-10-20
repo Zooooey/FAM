@@ -22,7 +22,7 @@
 #pragma GCC diagnostic ignored "-Wconversion"
 #include <oneapi/tbb.h>
 #pragma GCC diagnostic pop
-#define USE_CACHE 0;
+#define USE_CACHE 1
 #define CACHE_RATIO 0.2
 #define TRACE_CACHE 0
 #define TRACE_VERTEX_ID 1
@@ -30,7 +30,8 @@
 #define STOP_ROUND 3
 
 using namespace std;
-const char *CACHE_FILE_PATH = "/home/ccy/data_set/soc-LiveJournal1/corder_cache_file";
+//const char *CACHE_FILE_PATH = "/home/ccy/data_set/soc-LiveJournal1/corder_cache_file";
+const char *CACHE_FILE_PATH = "/home/ccy/data_set/MOLIERE_2016_FAM_GRAPH/out_degree_first.cache";
 
 namespace bfs {
 constexpr uint32_t NULLVERT = 0xFFFFFFFF;
@@ -120,11 +121,12 @@ public:
       exit(-1);
     }
     cache_file_instream.seekg(0, cache_file_instream.end);
-    uint64_t cache_file_size = cache_file_instream.tellg();
+    long cache_file_size = cache_file_instream.tellg();
     cache_file_instream.seekg(0, cache_file_instream.beg);
     cout<<"Cache size is "  << cache_file_size<<" bytes"<<endl;
     cout<<"Cache ratio is "<<CACHE_RATIO<<endl;
-    uint64_t cache_pool_capacity =  floor(cache_file_size*CACHE_RATIO);
+	double ret = floor(static_cast<double>(cache_file_size)*CACHE_RATIO);
+    uint64_t cache_pool_capacity = static_cast<uint64_t>(ret);
     cout<<"Cache capacity is :"<<cache_pool_capacity<<endl;
     cache_map = read_cache(cache_file_instream, cache_pool_capacity);
     cout << "read_cache done!" << endl;
@@ -172,10 +174,10 @@ public:
     };
     while (!frontier->is_empty()) {
       ++round;
-      if (round == 5) {
-        cout << "stop in round 5!" << endl;
-        exit(-1);
-      }
+      //if (round == 5) {
+      //  cout << "stop in round 5!" << endl;
+      //  exit(-1);
+     // }
       /*uint64_t round_frontier_count = 0;
 /tbb::parallel_for(my_range, [&](auto const &range) {
 for (uint32_t i = range.begin(); i < range.end(); ++i) {
@@ -209,22 +211,22 @@ for (uint32_t i = range.begin(); i < range.end(); ++i) {
         cout << endl;
       }
       if (!USE_CACHE) { cache_map->clear(); }
-      struct timespec t1, t2, res;
-      clock_gettime(CLOCK_MONOTONIC, &t1);
+      //struct timespec t1, t2, res;
+      //clock_gettime(CLOCK_MONOTONIC, &t1);
       famgraph::single_buffer::ccy_for_each_active_batch(
         cache_map, *frontier, my_range, c, bfs_push);
-      cout << "next_frontier collide count:" << next_frontier->collide_count << endl;
-      cout << "next_frontier no_collide count:" << next_frontier->no_collide_count
-           << endl;
-      cout << "next_frontier size:" << next_frontier->num_set() << endl;
+      //cout << "next_frontier collide count:" << next_frontier->collide_count << endl;
+      //cout << "next_frontier no_collide count:" << next_frontier->no_collide_count
+      //     << endl;
+      //cout << "next_frontier size:" << next_frontier->num_set() << endl;
       frontier->clear();
       std::swap(frontier, next_frontier);
-      clock_gettime(CLOCK_MONOTONIC, &t2);
-      famgraph::timespec_diff(&t2, &t1, &res);
-      BOOST_LOG_TRIVIAL(info) << "round:" << round << " bfs time(milli seconds):"
-                              << (res.tv_sec * 1000000000L + res.tv_nsec) / 1000000;
-      famgraph::print_stats_summary(c.context->stats);
-      famgraph::clear_all(c.context->stats);
+      //clock_gettime(CLOCK_MONOTONIC, &t2);
+      //famgraph::timespec_diff(&t2, &t1, &res);
+      //BOOST_LOG_TRIVIAL(info) << "round:" << round << " bfs time(milli seconds):"
+       //                       << (res.tv_sec * 1000000000L + res.tv_nsec) / 1000000;
+      //famgraph::print_stats_summary(c.context->stats);
+      //famgraph::clear_all(c.context->stats);
     }
     BOOST_LOG_TRIVIAL(info) << "bfs rounds " << round;
   }

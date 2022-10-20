@@ -565,7 +565,7 @@ namespace single_buffer {
         }
       }
     });
-    cout<<"function call times:" << function_count<<endl;
+    //cout<<"function call times:" << function_count<<endl;
     print_stats_round(ctx->stats);
     clear_stats_round(ctx->stats);
   }
