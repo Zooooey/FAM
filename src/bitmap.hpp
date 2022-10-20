@@ -199,7 +199,7 @@ auto cache_pack_window(unordered_map<unsigned int, edges_cache *> *cache_map,
       auto it = cache_map->find(v);
       bool in_cache = it != cache_map->end();
       if (in_cache) {
-		cout<<"cache hit:"<<v<<endl;
+		//cout<<"cache hit:"<<v<<endl;
         cache_hit_list.push_back(it);
         // This vertex is in cache, NEXT ONE!!
         v++;
@@ -522,6 +522,7 @@ namespace single_buffer {
         clock_gettime(CLOCK_MONOTONIC, &t2);
         famgraph::timespec_diff(&t2, &t1, &res);
         ctx->stats.pack_window_time.local() += res.tv_sec * 1000000000L + res.tv_nsec;
+		//cout<<"cache hit"cache_hit_list.size()
         next_range_start = next;
 
         struct ibv_send_wr *bad_wr = NULL;

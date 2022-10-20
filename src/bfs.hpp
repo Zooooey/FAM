@@ -27,7 +27,8 @@
 #define TRACE_CACHE 0
 #define TRACE_VERTEX_ID 1
 #define DEBUG 1
-#define STOP_ROUND 3
+#define DEBUG_EVERY_VERTEX 0
+#define STOP_ROUND 0
 
 using namespace std;
 //const char *CACHE_FILE_PATH = "/home/ccy/data_set/soc-LiveJournal1/corder_cache_file";
@@ -201,7 +202,7 @@ for (uint32_t i = range.begin(); i < range.end(); ++i) {
              << endl;
         exit(-1);
       }
-      if (DEBUG && STOP_ROUND != 0) {
+      if (DEBUG && DEBUG_EVERY_VERTEX) {
         cout << "round " << round << " ready go!" << endl;
         tbb::parallel_for(my_range, [&](auto const &range) {
           for (uint32_t i = range.begin(); i < range.end(); ++i) {
