@@ -10,6 +10,7 @@
 
 #include "communication_runtime.hpp"
 #include "bitmap.hpp"
+#include "types.hpp"
 
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
@@ -39,14 +40,13 @@ constexpr uint32_t NULLVERT = 0xFFFFFFFF;
 
 // ccy code
 
-static unordered_map<unsigned int, edges_cache *> *read_cache(ifstream &cache_file,
-  size_t capacity)
+static CacheMap *read_cache(ifstream &cache_file,
+  size_t capacity, uint32_t total_vert)
 {
   char buff[256];
   size_t cur_have_been_read_bytes = 0;
   ofstream CACHE_TRACE("cache_logic.trace", ios::out);
-  unordered_map<unsigned int, edges_cache *> *to_return =
-    new unordered_map<unsigned int, edges_cache *>();
+  CacheMap *to_return = new CacheMap(total_vert);
   while (cache_file.good() && cur_have_been_read_bytes < capacity) {
     cache_file.read(buff, sizeof(unsigned int) + sizeof(unsigned long));
     // unsigned int vertex_id = *(unsigned int *)buff;
@@ -64,24 +64,23 @@ static unordered_map<unsigned int, edges_cache *> *read_cache(ifstream &cache_fi
       break;
     }
 
-    edges_cache *v_struct = new edges_cache();
-    v_struct->vertex_id = vertex_id;
-    v_struct->out_vertices_num = out_vertices_num;
-    v_struct->out_vertices_array = new unsigned int[out_vertices_num];
+    CacheElem *v_struct = new CacheElem(vertex_id, out_vertices_num);
     if (vertex_id == TRACE_VERTEX_ID && TRACE_CACHE) {
       CACHE_TRACE << "displaying target_verices of vertex_id:" << TRACE_VERTEX_ID << endl;
     }
     for (unsigned long i = 0; i < out_vertices_num; i++) {
       cache_file.read(buff, sizeof(unsigned int));
       unsigned int target_vertex = *(reinterpret_cast<unsigned int *>(buff));
-      *(v_struct->out_vertices_array + i) = target_vertex;
+      v_struct.set_neighbor_at(i, target_vertex);
+      //*(v_struct->neightbors + static_cast<uint32_t>(i)) = target_vertex;
       if (vertex_id == TRACE_VERTEX_ID && TRACE_CACHE) {
         CACHE_TRACE << " " << target_vertex;
       }
       cur_have_been_read_bytes += sizeof(unsigned int);
     }
     if (vertex_id == TRACE_VERTEX_ID && TRACE_CACHE) { CACHE_TRACE << endl; }
-    to_return->insert({ v_struct->vertex_id, v_struct });
+    to_return.put(v_struct->vertex_id, v_struct);
+    //to_return->insert({ v_struct->vertex_id, v_struct });
   }
   return to_return;
 }
@@ -111,9 +110,8 @@ public:
   {}
   void operator()()
   {
-    auto const total_verts = c.num_vertices;
-    unordered_map<unsigned int, edges_cache *> *cache_map;
     // ifstream cache_file_instream("cache_file", ios::in | ios::binary);
+    auto const total_verts = c.num_vertices;
     // ifstream cache_file_instream("/home/ccy/data_set/soc-LiveJournal1/cache_file",
     // ios::in | ios::binary);
     ifstream cache_file_instream(CACHE_FILE_PATH, ios::in | ios::binary);
@@ -126,10 +124,12 @@ public:
     cache_file_instream.seekg(0, cache_file_instream.beg);
     cout<<"Cache size is "  << cache_file_size<<" bytes"<<endl;
     cout<<"Cache ratio is "<<CACHE_RATIO<<endl;
-	double ret = floor(static_cast<double>(cache_file_size)*CACHE_RATIO);
+	  double ret = floor(static_cast<double>(cache_file_size)*CACHE_RATIO);
     uint64_t cache_pool_capacity = static_cast<uint64_t>(ret);
     cout<<"Cache capacity is :"<<cache_pool_capacity<<endl;
-    cache_map = read_cache(cache_file_instream, cache_pool_capacity);
+
+    //build a contigous memory array for cache
+    CacheMap* cache_map = read_cache(cache_file_instream, cache_pool_capacity, total_verts;
     cout << "read_cache done! cache_map size is :"<<cache_map->size() << endl;
     auto vtable = c.p.second.get();
     auto *frontier = &c.frontierA;
@@ -211,7 +211,9 @@ for (uint32_t i = range.begin(); i < range.end(); ++i) {
         });
         cout << endl;
       }
-      if (!USE_CACHE) { cache_map->clear(); }
+      if (!USE_CACHE) { 
+        cache_map->clear_all();
+      }
       //struct timespec t1, t2, res;
       //clock_gettime(CLOCK_MONOTONIC, &t1);
       famgraph::single_buffer::ccy_for_each_active_batch(

@@ -32,20 +32,12 @@
 #include "vertex_table.hpp"//move later
 #include <connection_utils.hpp>//move later
 #include "communication_runtime.hpp"
-
+#include "types.hpp"
 #include <boost/log/trivial.hpp>//remove later
 
 #define WORD_OFFSET(i) (i >> 6)
 #define BIT_OFFSET(i) (i & 0x3f)
 
-// ccy code
-struct edges_cache
-{
-  unsigned int vertex_id;
-  unsigned int *out_vertices_array;
-  unsigned long out_vertices_num;
-};
-// ccy end
 
 using namespace std;
 
@@ -170,8 +162,8 @@ struct vertex_range
  * @return auto
  */
 template<typename V>
-auto cache_pack_window(unordered_map<unsigned int, edges_cache *> *cache_map,
-  vector<unordered_map<unsigned int, edges_cache *>::iterator> &cache_hit_list,
+auto cache_pack_window(CacheElem *cache_map,
+  vector<CacheElem *> &cache_hit_list,
   std::array<struct ibv_send_wr, famgraph::WR_WINDOW_SIZE> &wr_window,
   std::array<vertex_range, famgraph::WR_WINDOW_SIZE> &vertex_batch,
   std::array<struct ibv_sge, famgraph::WR_WINDOW_SIZE> &sge_window,
@@ -195,12 +187,13 @@ auto cache_pack_window(unordered_map<unsigned int, edges_cache *> *cache_map,
   while ((total_edges < edge_buf_size) && (wrs < famgraph::WR_WINDOW_SIZE)
          && (v < range_end)) {
     if (frontier.get_bit(v)) {
-      auto it = cache_map->find(v);
       clock_gettime(CLOCK_MONOTONIC, &t1);
-      bool in_cache = it != cache_map->end();
+      CacheElem* cache_elem = cache_map->get(v);
+  
+      bool in_cache = cache_elem != nullptr;
       if (in_cache) {
 		//cout<<"cache hit:"<<v<<endl;
-        cache_hit_list.push_back(it);
+        cache_hit_list.push_back(cache_elem);
         // This vertex is in cache, NEXT ONE!!
         ctx->stats.cache_hit.local()+=1;
         v++;
@@ -466,20 +459,20 @@ namespace single_buffer {
 
   template<typename F>
   void handle_cache(
-    vector<unordered_map<unsigned int, edges_cache *>::iterator> &cache_hit_list,
+    vector<CacheElem *>::iterator> &cache_hit_list,
     F const &function)
   {
     for (auto it = cache_hit_list.begin(); it != cache_hit_list.end(); it++) {
-      unordered_map<unsigned int, edges_cache *>::iterator elem = *it;
-      uint32_t out_num = static_cast<uint32_t>(elem->second->out_vertices_num);
-      function(elem->first,
-        const_cast<uint32_t *const>(elem->second->out_vertices_array),
+      CacheElem* elem = *it;
+      uint32_t out_num = static_cast<uint32_t>(elem->get_out_degree());
+      function(elem->get_vertex_id(),
+        const_cast<uint32_t *const>(elem->get_neighbors()),
         out_num);
     }
   }
 
   template<typename F, typename Context>
-  void ccy_for_each_active_batch(unordered_map<unsigned int, edges_cache *> *cache_map,
+  void ccy_for_each_active_batch(CacheElem *cache_map,
     Bitmap const &frontier,
     tbb::blocked_range<uint32_t> const my_range,
     Context &c,
@@ -501,7 +494,7 @@ namespace single_buffer {
       std::array<struct ibv_sge, famgraph::WR_WINDOW_SIZE> sge_window;
       uint32_t next_range_start = range.begin();
       uint32_t const range_end = range.end();
-      vector<unordered_map<unsigned int, edges_cache *>::iterator> cache_hit_list;
+      vector<CacheElem *>::iterator> cache_hit_list;
       while (next_range_start < range_end) {
         // cout<<"start pack window ["<<next_range_start<<","<<range_end<<")"<<endl;
         // every pack_window is a batch, we clear cache list to add new cache vertex.
