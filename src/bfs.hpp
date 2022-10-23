@@ -27,7 +27,7 @@
 #define CACHE_RATIO 0.2
 #define TRACE_CACHE 0
 #define TRACE_VERTEX_ID 1
-#define DEBUG 1
+#define DEBUG 0
 #define DEBUG_EVERY_VERTEX 0
 #define STOP_ROUND 0
 
@@ -68,10 +68,10 @@ static CacheMap *read_cache(ifstream &cache_file,
     if (vertex_id == TRACE_VERTEX_ID && TRACE_CACHE) {
       CACHE_TRACE << "displaying target_verices of vertex_id:" << TRACE_VERTEX_ID << endl;
     }
-    for (unsigned long i = 0; i < out_vertices_num; i++) {
+    for (uint32_t i = 0; i < out_vertices_num; i++) {
       cache_file.read(buff, sizeof(unsigned int));
-      unsigned int target_vertex = *(reinterpret_cast<unsigned int *>(buff));
-      v_struct.set_neighbor_at(i, target_vertex);
+      uint32_t target_vertex = *(reinterpret_cast<uint32_t *>(buff));
+      v_struct->set_neighbor_at(i, target_vertex);
       //*(v_struct->neightbors + static_cast<uint32_t>(i)) = target_vertex;
       if (vertex_id == TRACE_VERTEX_ID && TRACE_CACHE) {
         CACHE_TRACE << " " << target_vertex;
@@ -79,7 +79,7 @@ static CacheMap *read_cache(ifstream &cache_file,
       cur_have_been_read_bytes += sizeof(unsigned int);
     }
     if (vertex_id == TRACE_VERTEX_ID && TRACE_CACHE) { CACHE_TRACE << endl; }
-    to_return.put(v_struct->vertex_id, v_struct);
+    to_return->put(v_struct->get_vertex_id(), v_struct);
     //to_return->insert({ v_struct->vertex_id, v_struct });
   }
   return to_return;
@@ -129,7 +129,7 @@ public:
     cout<<"Cache capacity is :"<<cache_pool_capacity<<endl;
 
     //build a contigous memory array for cache
-    CacheMap* cache_map = read_cache(cache_file_instream, cache_pool_capacity, total_verts;
+    CacheMap* cache_map = read_cache(cache_file_instream, cache_pool_capacity, total_verts);
     cout << "read_cache done! cache_map size is :"<<cache_map->size() << endl;
     auto vtable = c.p.second.get();
     auto *frontier = &c.frontierA;
@@ -230,8 +230,10 @@ for (uint32_t i = range.begin(); i < range.end(); ++i) {
       //famgraph::timespec_diff(&t2, &t1, &res);
       //BOOST_LOG_TRIVIAL(info) << "round:" << round << " bfs time(milli seconds):"
        //                       << (res.tv_sec * 1000000000L + res.tv_nsec) / 1000000;
-      famgraph::print_stats_summary(c.context->stats);
-      famgraph::clear_all(c.context->stats);
+      if(DEBUG){
+      	famgraph::print_stats_summary(c.context->stats);
+      	famgraph::clear_all(c.context->stats);
+		}
     }
     BOOST_LOG_TRIVIAL(info) << "bfs rounds " << round;
   }
