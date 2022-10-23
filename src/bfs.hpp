@@ -22,7 +22,7 @@
 #pragma GCC diagnostic ignored "-Wconversion"
 #include <oneapi/tbb.h>
 #pragma GCC diagnostic pop
-#define USE_CACHE 1
+#define USE_CACHE 0
 #define CACHE_RATIO 0.2
 #define TRACE_CACHE 0
 #define TRACE_VERTEX_ID 1
@@ -130,7 +130,7 @@ public:
     uint64_t cache_pool_capacity = static_cast<uint64_t>(ret);
     cout<<"Cache capacity is :"<<cache_pool_capacity<<endl;
     cache_map = read_cache(cache_file_instream, cache_pool_capacity);
-    cout << "read_cache done!" << endl;
+    cout << "read_cache done! cache_map size is :"<<cache_map->size() << endl;
     auto vtable = c.p.second.get();
     auto *frontier = &c.frontierA;
     auto *next_frontier = &c.frontierB;

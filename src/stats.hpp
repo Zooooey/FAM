@@ -185,10 +185,12 @@ inline void print_stats_summary(FG_stats const &stats)
 {
   BOOST_LOG_TRIVIAL(info)
     << "\nTotal Spin Time (s): "
-    << static_cast<double>(stats.total_spin_time) / 1000000000 / 10
+    //<< static_cast<double>(stats.total_spin_time) / 1000000000 / 10
+    << static_cast<double>(stats.total_spin_time) / 1000000000 
     << "\n"
     << " Total Function Time (s) "
-    << static_cast<double>(stats.total_function_time) / 1000000000 / 10
+    //<< static_cast<double>(stats.total_function_time) / 1000000000 / 10
+    << static_cast<double>(stats.total_function_time) / 1000000000 
     << "\n"
     << " Total Cache Function Time (s) "
     << static_cast<double>(stats.total_cache_function_time) / 1000000000
@@ -202,7 +204,7 @@ inline void print_stats_summary(FG_stats const &stats)
     << " Total Atomic Time (s)"
     << static_cast<double>(stats.total_atomic_time) / 1000000000
     << "\n"
-    << " Total Cache hit"
+    << " Total Cache hit:"
     << static_cast<double>(stats.total_cache_hit)
     << "\n"
     << " WR's: " << stats.wrs << " sends: " << stats.sends << std::endl;
