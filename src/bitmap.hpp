@@ -68,8 +68,8 @@ public:
       for (uint32_t i = range.begin(); i < range.end(); ++i) { data[i] = 0; }
     });
     frontier_size.clear();
-  	collide_count = 0;
-  	no_collide_count = 0;
+    collide_count = 0;
+    no_collide_count = 0;
   }
   void set_all() noexcept
   {
@@ -91,11 +91,11 @@ public:
     unsigned long prev = __sync_fetch_and_or(
       data + WORD_OFFSET(i), 1ul << BIT_OFFSET(i));// change sync to atomic intrinsic
     bool const was_unset = !(prev & (1ul << BIT_OFFSET(i)));
-    if (was_unset) { 
-		++frontier_size.local();
-    	no_collide_count++;
-	}
-    else collide_count++;
+    if (was_unset) {
+      ++frontier_size.local();
+      no_collide_count++;
+    } else
+      collide_count++;
     return was_unset;// true if the bit was not previously set
   }
 
@@ -188,24 +188,24 @@ auto cache_pack_window(CacheMap *cache_map,
          && (v < range_end)) {
     if (frontier.get_bit(v)) {
       clock_gettime(CLOCK_MONOTONIC, &t1);
-      CacheElem* cache_elem = cache_map->get(v);
-  
+      CacheElem *cache_elem = cache_map->get(v);
+
       bool in_cache = cache_elem != nullptr;
       if (in_cache) {
-		//cout<<"cache hit:"<<v<<endl;
+        // cout<<"cache hit:"<<v<<endl;
         cache_hit_list.push_back(cache_elem);
         // This vertex is in cache, NEXT ONE!!
-        ctx->stats.cache_hit.local()+=1;
+        ctx->stats.cache_hit.local() += 1;
         v++;
-      	clock_gettime(CLOCK_MONOTONIC, &t2);
-      	famgraph::timespec_diff(&t2, &t1, &res);
-      	ctx->stats.cache_building_time.local() += res.tv_sec * 1000000000L + res.tv_nsec;
+        clock_gettime(CLOCK_MONOTONIC, &t2);
+        famgraph::timespec_diff(&t2, &t1, &res);
+        ctx->stats.cache_building_time.local() += res.tv_sec * 1000000000L + res.tv_nsec;
         continue;
-	  }else {
-			  clock_gettime(CLOCK_MONOTONIC, &t2);
-			  famgraph::timespec_diff(&t2, &t1, &res);
-			  ctx->stats.cache_building_time.local() += res.tv_sec * 1000000000L + res.tv_nsec;
-	  }
+      } else {
+        clock_gettime(CLOCK_MONOTONIC, &t2);
+        famgraph::timespec_diff(&t2, &t1, &res);
+        ctx->stats.cache_building_time.local() += res.tv_sec * 1000000000L + res.tv_nsec;
+      }
 
       uint32_t const n_out_edge =
         famgraph::get_num_edges(v, vtable, g_total_verts, g_total_edges);
@@ -458,12 +458,10 @@ namespace single_buffer {
 
 
   template<typename F>
-  inline void handle_cache(
-    vector<CacheElem*> &cache_hit_list,
-    F const &function)
+  inline void handle_cache(vector<CacheElem *> &cache_hit_list, F const &function)
   {
     for (auto it = cache_hit_list.begin(); it != cache_hit_list.end(); it++) {
-      CacheElem* elem = *it;
+      CacheElem *elem = *it;
       uint32_t out_num = static_cast<uint32_t>(elem->get_out_degree());
       function(elem->get_vertex_id(),
         const_cast<uint32_t *const>(elem->get_neighbors()),
@@ -482,8 +480,8 @@ namespace single_buffer {
     auto RDMA_area = c.RDMA_window.get();
     auto const edge_buf_size = c.edge_buf_size;
     auto ctx = c.context;
-    std::atomic<uint64_t> function_count{0};
-    std::atomic<uint64_t> cache_count{0};
+    std::atomic<uint64_t> function_count{ 0 };
+    std::atomic<uint64_t> cache_count{ 0 };
 
     tbb::parallel_for(my_range, [&](auto const &range) {
       struct timespec t1, t2, res;
@@ -517,7 +515,7 @@ namespace single_buffer {
         clock_gettime(CLOCK_MONOTONIC, &t2);
         famgraph::timespec_diff(&t2, &t1, &res);
         ctx->stats.pack_window_time.local() += res.tv_sec * 1000000000L + res.tv_nsec;
-		//cout<<"cache hit"cache_hit_list.size()
+        // cout<<"cache hit"cache_hit_list.size()
         next_range_start = next;
 
         struct ibv_send_wr *bad_wr = NULL;
@@ -528,8 +526,15 @@ namespace single_buffer {
           // While we waiting the RDMA result, we can process cache vertex.
           if (!cache_hit_list.empty()) {
             clock_gettime(CLOCK_MONOTONIC, &t1);
-            handle_cache(cache_hit_list, function);
-		    cache_count+=cache_hit_list.size();
+            for (auto it = cache_hit_list.begin(); it != cache_hit_list.end(); it++) {
+              CacheElem *elem = *it;
+              uint32_t out_num = static_cast<uint32_t>(elem->get_out_degree());
+              cache_count += out_num;
+              function(elem->get_vertex_id(),
+                const_cast<uint32_t *const>(elem->get_neighbors()),
+                out_num);
+            }
+            //cache_count += cache_hit_list.size();
             clock_gettime(CLOCK_MONOTONIC, &t2);
             famgraph::timespec_diff(&t2, &t1, &res);
             ctx->stats.cache_function_time.local() +=
@@ -549,7 +554,8 @@ namespace single_buffer {
               ctx->stats.spin_time.local() += res.tv_sec * 1000000000L + res.tv_nsec;
               clock_gettime(CLOCK_MONOTONIC, &t1);
               function(v, const_cast<uint32_t *const>(e_buf), n_edges);
-              function_count++;
+              function_count += n_edges;
+              // function_count++;
               clock_gettime(CLOCK_MONOTONIC, &t2);
               famgraph::timespec_diff(&t2, &t1, &res);
               ctx->stats.function_time.local() += res.tv_sec * 1000000000L + res.tv_nsec;
@@ -559,16 +565,24 @@ namespace single_buffer {
           // DO NOT FROGET that all vertices in this pack_window round may all in cache.
         } else if (!cache_hit_list.empty()) {
           clock_gettime(CLOCK_MONOTONIC, &t1);
-          handle_cache(cache_hit_list, function);
+          for (auto it = cache_hit_list.begin(); it != cache_hit_list.end(); it++) {
+            CacheElem *elem = *it;
+            uint32_t out_num = static_cast<uint32_t>(elem->get_out_degree());
+            cache_count += out_num;
+            function(elem->get_vertex_id(),
+              const_cast<uint32_t *const>(elem->get_neighbors()),
+              out_num);
+          }
           clock_gettime(CLOCK_MONOTONIC, &t2);
-		  cache_count+=cache_hit_list.size();
+          //cache_count += cache_hit_list.size();
           famgraph::timespec_diff(&t2, &t1, &res);
           ctx->stats.cache_function_time.local() +=
             res.tv_sec * 1000000000L + res.tv_nsec;
         }
       }
     });
-    cout<<"function call times:" << function_count<<" cache count:"<<cache_count<<endl;
+    cout << "function call times:" << function_count << " cache count:" << cache_count
+         << endl;
     print_stats_round(ctx->stats);
     clear_stats_round(ctx->stats);
   }
