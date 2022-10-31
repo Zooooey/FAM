@@ -23,8 +23,8 @@
 #pragma GCC diagnostic ignored "-Wconversion"
 #include <oneapi/tbb.h>
 #pragma GCC diagnostic pop
-#define USE_CACHE 0
-#define CACHE_RATIO 0.2
+#define USE_CACHE 1
+#define CACHE_RATIO 1
 #define TRACE_CACHE 0
 #define TRACE_VERTEX_ID 1
 #define DEBUG 0
@@ -34,6 +34,7 @@
 using namespace std;
 //const char *CACHE_FILE_PATH = "/home/ccy/data_set/soc-LiveJournal1/corder_cache_file";
 const char *CACHE_FILE_PATH = "/home/ccy/data_set/MOLIERE_2016_FAM_GRAPH/out_degree_first.cache";
+//const char *CACHE_FILE_PATH = "/home/ccy/data_set/soc-LiveJournal1/out_degree_first.cache";
 
 namespace bfs {
 constexpr uint32_t NULLVERT = 0xFFFFFFFF;
@@ -131,6 +132,8 @@ public:
     //build a contigous memory array for cache
     CacheMap* cache_map = read_cache(cache_file_instream, cache_pool_capacity, total_verts);
     cout << "read_cache done! cache_map size is :"<<cache_map->size() << endl;
+    struct timespec t1, t2, res;
+    clock_gettime(CLOCK_MONOTONIC, &t1);
     auto vtable = c.p.second.get();
     auto *frontier = &c.frontierA;
     auto *next_frontier = &c.frontierB;
@@ -235,6 +238,10 @@ for (uint32_t i = range.begin(); i < range.end(); ++i) {
       	famgraph::clear_all(c.context->stats);
 		}
     }
+    clock_gettime(CLOCK_MONOTONIC, &t2);
+    famgraph::timespec_diff(&t2, &t1, &res);
+    BOOST_LOG_TRIVIAL(info) << "time consume without cache reading(s):" 
+                            << static_cast<double>(res.tv_sec * 1000000000L + res.tv_nsec) / 1000000000;
     BOOST_LOG_TRIVIAL(info) << "bfs rounds " << round;
   }
   void print_result() {}

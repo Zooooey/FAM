@@ -458,7 +458,7 @@ namespace single_buffer {
 
 
   template<typename F>
-  void handle_cache(
+  inline void handle_cache(
     vector<CacheElem*> &cache_hit_list,
     F const &function)
   {
@@ -483,6 +483,7 @@ namespace single_buffer {
     auto const edge_buf_size = c.edge_buf_size;
     auto ctx = c.context;
     std::atomic<uint64_t> function_count{0};
+    std::atomic<uint64_t> cache_count{0};
 
     tbb::parallel_for(my_range, [&](auto const &range) {
       struct timespec t1, t2, res;
@@ -528,6 +529,7 @@ namespace single_buffer {
           if (!cache_hit_list.empty()) {
             clock_gettime(CLOCK_MONOTONIC, &t1);
             handle_cache(cache_hit_list, function);
+		    cache_count+=cache_hit_list.size();
             clock_gettime(CLOCK_MONOTONIC, &t2);
             famgraph::timespec_diff(&t2, &t1, &res);
             ctx->stats.cache_function_time.local() +=
@@ -559,13 +561,14 @@ namespace single_buffer {
           clock_gettime(CLOCK_MONOTONIC, &t1);
           handle_cache(cache_hit_list, function);
           clock_gettime(CLOCK_MONOTONIC, &t2);
+		  cache_count+=cache_hit_list.size();
           famgraph::timespec_diff(&t2, &t1, &res);
           ctx->stats.cache_function_time.local() +=
             res.tv_sec * 1000000000L + res.tv_nsec;
         }
       }
     });
-    //cout<<"function call times:" << function_count<<endl;
+    cout<<"function call times:" << function_count<<" cache count:"<<cache_count<<endl;
     print_stats_round(ctx->stats);
     clear_stats_round(ctx->stats);
   }
