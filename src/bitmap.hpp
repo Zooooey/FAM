@@ -189,7 +189,7 @@ auto cache_pack_window(CacheMap *cache_map,
          && (v < range_end)) {
     if (frontier.get_bit(v)) {
       clock_gettime(CLOCK_MONOTONIC, &t1);
-      CacheElem *cache_elem = cache_map[v];
+      CacheElem *cache_elem = cache_map->get(v);
 
       bool in_cache = cache_elem != nullptr;
       if (in_cache) {
@@ -568,7 +568,7 @@ namespace single_buffer {
           }
           // DO NOT FROGET that all vertices in this pack_window round may all in cache.
         } else {
-          for (int i = 0; i < cache_size; i++) {
+          for (uint32_t i = 0; i < cache_size; i++) {
             if (cache_hit_list[i] != nullptr) {
               clock_gettime(CLOCK_MONOTONIC, &t1);
               CacheElem *elem = cache_hit_list[i];
