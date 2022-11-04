@@ -163,7 +163,7 @@ struct vertex_range
  */
 template<typename V>
 auto cache_pack_window(CacheMap *cache_map,
-  CacheElem *cache_hit_list,
+  CacheElem **cache_hit_list,
   std::array<struct ibv_send_wr, famgraph::WR_WINDOW_SIZE> &wr_window,
   std::array<vertex_range, famgraph::WR_WINDOW_SIZE> &vertex_batch,
   std::array<struct ibv_sge, famgraph::WR_WINDOW_SIZE> &sge_window,
@@ -495,11 +495,11 @@ namespace single_buffer {
       uint32_t next_range_start = range.begin();
       uint32_t const range_end = range.end();
       uint32_t cache_size = range.end() - range.begin();
-      CacheElem *cache_hit_list = new CacheElem *[cache_size];
+      CacheElem **cache_hit_list = new CacheElem *[cache_size];
       while (next_range_start < range_end) {
         // cout<<"start pack window ["<<next_range_start<<","<<range_end<<")"<<endl;
         // every pack_window is a batch, we clear cache list to add new cache vertex.
-        for (int i = 0; i < cache_size; i++) { cache_hit_list[i] = nullptr; }
+        for (uint32_t i = 0; i < cache_size; i++) { cache_hit_list[i] = nullptr; }
         // if vertex in cache, we don't send ramd request.
         clock_gettime(CLOCK_MONOTONIC, &t1);
         auto const [next, wrs] = cache_pack_window<>(cache_map,
@@ -526,8 +526,8 @@ namespace single_buffer {
         if (wrs > 0) {
           TEST_NZ(ibv_post_send((ctx->cm_ids)[worker_id]->qp, &wr, &bad_wr));
           // While we waiting the RDMA result, we can process cache vertex.
-          for (int i = 0; i < cache_size; i++) {
-            if (!cache_hit_list[i] != nullptr) {
+          for (uint32_t i = 0; i < cache_size; i++) {
+            if (cache_hit_list[i] != nullptr) {
               clock_gettime(CLOCK_MONOTONIC, &t1);
               CacheElem *elem = cache_hit_list[i];
               uint32_t out_num = static_cast<uint32_t>(elem->get_out_degree());
@@ -541,7 +541,7 @@ namespace single_buffer {
               famgraph::timespec_diff(&t2, &t1, &res);
               ctx->stats.cache_function_time.local() +=
                 res.tv_sec * 1000000000L + res.tv_nsec;
-              cache_hist_list[i] = nullptr;
+              cache_hit_list[i] = nullptr;
             }
           }
           uint32_t volatile *e_buf = edge_buf;
@@ -569,7 +569,7 @@ namespace single_buffer {
           // DO NOT FROGET that all vertices in this pack_window round may all in cache.
         } else {
           for (int i = 0; i < cache_size; i++) {
-            if (!cache_hit_list[i] != nullptr) {
+            if (cache_hit_list[i] != nullptr) {
               clock_gettime(CLOCK_MONOTONIC, &t1);
               CacheElem *elem = cache_hit_list[i];
               uint32_t out_num = static_cast<uint32_t>(elem->get_out_degree());
@@ -583,7 +583,7 @@ namespace single_buffer {
               famgraph::timespec_diff(&t2, &t1, &res);
               ctx->stats.cache_function_time.local() +=
                 res.tv_sec * 1000000000L + res.tv_nsec;
-              cache_hist_list[i] = nullptr;
+              cache_hit_list[i] = nullptr;
             }
           }
         }
