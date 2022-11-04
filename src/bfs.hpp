@@ -24,7 +24,7 @@
 #include <oneapi/tbb.h>
 #pragma GCC diagnostic pop
 #define USE_CACHE 1
-#define CACHE_RATIO 1
+#define CACHE_RATIO 0
 #define TRACE_CACHE 0
 #define TRACE_VERTEX_ID 1
 #define DEBUG 0
