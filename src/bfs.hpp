@@ -91,7 +91,12 @@ static CacheMap *read_cache(ifstream &cache_file,
 struct bfs_vertex
 {
   std::atomic<uint32_t> parent{ NULLVERT };
-  bool visited = false;
+  //bool visited = false;
+  std::atomic<bool> visited{false};
+
+  bool cas_visited(){
+    return flag.compare_exchange_strong(false, true)
+  }
 
   bool update_atomic(uint32_t const t_parent) noexcept
   {// returns true if update succeeded
@@ -166,8 +171,9 @@ public:
       for (uint32_t i = 0; i < n; ++i) {// push out updates //make parallel
         uint32_t w = edges[i];
         //clock_gettime(CLOCK_MONOTONIC, &atomic_t1);
-        if (!vtable[w].visited && vtable[w].update_atomic(round)) {
-          vtable[w].visited = true;
+        //if (!vtable[w].visited && vtable[w].update_atomic(round)) {
+        if(vtable[w].cas_visited())
+          // vtable[w].visited = true;
           next_frontier->set_bit(w);// activate w
         }
         //clock_gettime(CLOCK_MONOTONIC, &atomic_t2);
