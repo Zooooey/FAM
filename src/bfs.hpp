@@ -166,8 +166,9 @@ public:
       for (uint32_t i = 0; i < n; ++i) {// push out updates //make parallel
         uint32_t w = edges[i];
         //clock_gettime(CLOCK_MONOTONIC, &atomic_t1);
-        if (!vtable[w].visited && vtable[w].update_atomic(round)) {
-          vtable[w].visited = true;
+        //if (!vtable[w].visited && vtable[w].update_atomic(round)) {
+        if (vtable[w].update_atomic(round)) {
+          //vtable[w].visited = true;
           next_frontier->set_bit(w);// activate w
         }
         //clock_gettime(CLOCK_MONOTONIC, &atomic_t2);
