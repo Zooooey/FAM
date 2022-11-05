@@ -532,8 +532,9 @@ namespace single_buffer {
               CacheElem *elem = cache_hit_list[i];
               uint32_t out_num = static_cast<uint32_t>(elem->get_out_degree());
               cache_count += out_num;
+              uint32_t volatile *e_buf = elem->get_neighbors();
               function(elem->get_vertex_id(),
-                const_cast<uint32_t *const>(elem->get_neighbors()),
+                const_cast<uint32_t *const>(e_buf),
                 out_num);
 
               // cache_count += cache_hit_list.size();
@@ -574,8 +575,9 @@ namespace single_buffer {
               CacheElem *elem = cache_hit_list[i];
               uint32_t out_num = static_cast<uint32_t>(elem->get_out_degree());
               cache_count += out_num;
+              uint32_t volatile *e_buf = elem->get_neighbors();
               function(elem->get_vertex_id(),
-                const_cast<uint32_t *const>(elem->get_neighbors()),
+                const_cast<uint32_t *const>(e_buf),
                 out_num);
 
               // cache_count += cache_hit_list.size();
