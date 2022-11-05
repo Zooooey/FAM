@@ -172,7 +172,7 @@ public:
         uint32_t w = edges[i];
         //clock_gettime(CLOCK_MONOTONIC, &atomic_t1);
         //if (!vtable[w].visited && vtable[w].update_atomic(round)) {
-        if(vtable[w].cas_visited())
+        if(vtable[w].cas_visited()){
           // vtable[w].visited = true;
           next_frontier->set_bit(w);// activate w
         }
