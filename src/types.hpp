@@ -1,6 +1,9 @@
 #ifndef types_h
 #define types_h
-
+#include <sys/mman.h>
+#include <iostream>
+#include <string.h>
+using namespace std;
 class CacheElem
 {
 private:
@@ -14,6 +17,14 @@ public:
     vertex_id = v_id;
     out_degree = out_deg;
     neighbors = new uint32_t[out_deg];
+    /*void *p =  mmap(0, sizeof(uint32_t)*out_deg, PROT_READ | PROT_WRITE , MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	if(p != MAP_FAILED){
+		neighbors = static_cast<uint32_t*>(p);
+	}else {
+		cout<<"mmap failed for cache elem!"<<endl;
+		printf("Error opening the file: %s\n", strerror(errno));
+		exit(-1);
+	}*/
   }
 
   uint64_t get_out_degree() { return out_degree; }

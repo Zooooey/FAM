@@ -24,7 +24,7 @@
 #include <oneapi/tbb.h>
 #pragma GCC diagnostic pop
 #define USE_CACHE 1
-#define CACHE_RATIO 0
+#define CACHE_RATIO 1
 #define TRACE_CACHE 0
 #define TRACE_VERTEX_ID 1
 #define DEBUG 0
@@ -44,6 +44,8 @@ constexpr uint32_t NULLVERT = 0xFFFFFFFF;
 static CacheMap *read_cache(ifstream &cache_file,
   size_t capacity, uint32_t total_vert)
 {
+  uint64_t cache_new_count = 0;
+	
   char buff[256];
   size_t cur_have_been_read_bytes = 0;
   ofstream CACHE_TRACE("cache_logic.trace", ios::out);
@@ -66,6 +68,8 @@ static CacheMap *read_cache(ifstream &cache_file,
     }
 
     CacheElem *v_struct = new CacheElem(vertex_id, out_vertices_num);
+	cache_new_count+=out_vertices_num;
+	//cout<<"out_vertices_num:"<<cache_new_count<<endl;
     if (vertex_id == TRACE_VERTEX_ID && TRACE_CACHE) {
       CACHE_TRACE << "displaying target_verices of vertex_id:" << TRACE_VERTEX_ID << endl;
     }
@@ -94,9 +98,9 @@ struct bfs_vertex
   //bool visited = false;
   std::atomic<bool> visited{false};
 
-  bool cas_visited(){
-    return flag.compare_exchange_strong(false, true)
-  }
+  /*bool cas_visited(){
+    return visited.compare_exchange_strong(false, true)
+  }*/
 
   bool update_atomic(uint32_t const t_parent) noexcept
   {// returns true if update succeeded
@@ -125,6 +129,13 @@ public:
       cout << "FATAL: open file cache_file failed!" << endl;
       exit(-1);
     }
+	void *p =  mmap(0, sizeof(uint32_t)*80, PROT_READ | PROT_WRITE , MAP_PRIVATE | MAP_ANONYMOUS, 
+-1, 0);
+	if(p == MAP_FAILED){
+		cout<<"mmap failed for test!"<<endl;
+		printf("Error mmaping test: %s\n", strerror(errno));
+		exit(-1);
+	}
     cache_file_instream.seekg(0, cache_file_instream.end);
     long cache_file_size = cache_file_instream.tellg();
     cache_file_instream.seekg(0, cache_file_instream.beg);
@@ -171,9 +182,9 @@ public:
       for (uint32_t i = 0; i < n; ++i) {// push out updates //make parallel
         uint32_t w = edges[i];
         //clock_gettime(CLOCK_MONOTONIC, &atomic_t1);
-        //if (!vtable[w].visited && vtable[w].update_atomic(round)) {
-        if(vtable[w].cas_visited()){
-          // vtable[w].visited = true;
+        if (!vtable[w].visited && vtable[w].update_atomic(round)) {
+        //if(vtable[w].cas_visited()){
+           vtable[w].visited = true;
           next_frontier->set_bit(w);// activate w
         }
         //clock_gettime(CLOCK_MONOTONIC, &atomic_t2);
@@ -221,7 +232,7 @@ for (uint32_t i = range.begin(); i < range.end(); ++i) {
         cout << endl;
       }
       if (!USE_CACHE) { 
-        cache_map->clear_all();
+        //cache_map->clear_all();
       }
       //struct timespec t1, t2, res;
       //clock_gettime(CLOCK_MONOTONIC, &t1);
@@ -238,7 +249,7 @@ for (uint32_t i = range.begin(); i < range.end(); ++i) {
       //clock_gettime(CLOCK_MONOTONIC, &t2);
       //famgraph::timespec_diff(&t2, &t1, &res);
       //BOOST_LOG_TRIVIAL(info) << "round:" << round << " bfs time(milli seconds):"
-       //                       << (res.tv_sec * 1000000000L + res.tv_nsec) / 1000000;
+      //                       << (res.tv_sec * 1000000000L + res.tv_nsec) / 1000000;
       if(DEBUG){
       	famgraph::print_stats_summary(c.context->stats);
       	famgraph::clear_all(c.context->stats);
