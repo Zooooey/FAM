@@ -23,7 +23,7 @@
 #pragma GCC diagnostic ignored "-Wconversion"
 #include <oneapi/tbb.h>
 #pragma GCC diagnostic pop
-#define USE_CACHE 1
+#define USE_CACHE 0
 #define CACHE_RATIO 1
 #define TRACE_CACHE 0
 #define TRACE_VERTEX_ID 1
@@ -232,7 +232,7 @@ for (uint32_t i = range.begin(); i < range.end(); ++i) {
         cout << endl;
       }
       if (!USE_CACHE) { 
-        //cache_map->clear_all();
+        cache_map->clear_all();
       }
       //struct timespec t1, t2, res;
       clock_gettime(CLOCK_MONOTONIC, &t1);

@@ -95,8 +95,7 @@ public:
       uint32_t const my_id = vtable[v].id.load(std::memory_order_relaxed);
       for (uint32_t i = 0; i < n; ++i) {// push out updates //make parallel
         uint32_t w = edges[i];
-        bool expected = false;
-        if (vtable[w].visited.compare_exchange_strong(expected, true)) {
+		if (vtable[w].update_atomic(my_id)) {	
           next_frontier->set_bit(w);// activate w
         }
       }

@@ -134,7 +134,7 @@ inline void clear_stats_round(FG_stats &stats)
   }
 
   for (auto &t : stats.foreach_time) {
-    stats.foreach_time += t;
+    stats.total_foreach_time += t;
     t = 0;
   }
 

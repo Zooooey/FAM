@@ -194,15 +194,15 @@ auto cache_pack_window(CacheMap *cache_map,
       bool in_cache = cache_elem != nullptr;
       if (in_cache) {
         // cout<<"cache hit:"<<v<<endl;
-        //cache_hit_list[cache_index++] = cache_elem;
-        cache_hit_list[cache_index++] = nullptr;
+        cache_hit_list[cache_index++] = cache_elem;
+        //cache_hit_list[cache_index++] = nullptr;
         // This vertex is in cache, NEXT ONE!!
-        //ctx->stats.cache_hit.local() += 1;
-        //v++;
+        ctx->stats.cache_hit.local() += 1;
+        v++;
         clock_gettime(CLOCK_MONOTONIC, &t2);
         famgraph::timespec_diff(&t2, &t1, &res);
         ctx->stats.cache_building_time.local() += res.tv_sec * 1000000000L + res.tv_nsec;
-        //continue;
+        continue;
       } else {
         clock_gettime(CLOCK_MONOTONIC, &t2);
         famgraph::timespec_diff(&t2, &t1, &res);
@@ -599,7 +599,7 @@ namespace single_buffer {
     clock_gettime(CLOCK_MONOTONIC, &f_t2);
     famgraph::timespec_diff(&f_t2, &f_t1, &f_res);
     ctx->stats.foreach_time.local() +=
-                res.tv_sec * 1000000000L + res.tv_nsec;
+                f_res.tv_sec * 1000000000L + f_res.tv_nsec;
     cout << "function call times:" << function_count << " cache count:" << cache_count
          << endl;
     print_stats_round(ctx->stats);
