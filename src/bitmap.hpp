@@ -194,14 +194,15 @@ auto cache_pack_window(CacheMap *cache_map,
       bool in_cache = cache_elem != nullptr;
       if (in_cache) {
         // cout<<"cache hit:"<<v<<endl;
-        cache_hit_list[cache_index++] = cache_elem;
+        //cache_hit_list[cache_index++] = cache_elem;
+        cache_hit_list[cache_index++] = nullptr;
         // This vertex is in cache, NEXT ONE!!
-        ctx->stats.cache_hit.local() += 1;
-        v++;
+        //ctx->stats.cache_hit.local() += 1;
+        //v++;
         clock_gettime(CLOCK_MONOTONIC, &t2);
         famgraph::timespec_diff(&t2, &t1, &res);
         ctx->stats.cache_building_time.local() += res.tv_sec * 1000000000L + res.tv_nsec;
-        continue;
+        //continue;
       } else {
         clock_gettime(CLOCK_MONOTONIC, &t2);
         famgraph::timespec_diff(&t2, &t1, &res);
@@ -551,9 +552,9 @@ namespace single_buffer {
           for (uint32_t i = 0; i < wrs; ++i) {
             //这个应该是一个点的范围，遍历这个点的范围，还要根据点获取边列表。
             for (uint32_t v = vertex_batch[i].v_s; v <= vertex_batch[i].v_e; v++) {
+              clock_gettime(CLOCK_MONOTONIC, &t1);
               uint32_t n_edges = famgraph::get_num_edges(
                 v, idx, ctx->app->num_vertices, ctx->app->num_edges);
-              clock_gettime(CLOCK_MONOTONIC, &t1);
               while (e_buf[0] == famgraph::NULL_VERT) {}
               while (e_buf[n_edges - 1] == famgraph::NULL_VERT) {}
               clock_gettime(CLOCK_MONOTONIC, &t2);
@@ -587,7 +588,9 @@ namespace single_buffer {
               famgraph::timespec_diff(&t2, &t1, &res);
               ctx->stats.cache_function_time.local() +=
                 res.tv_sec * 1000000000L + res.tv_nsec;
+			  delete cache_hit_list[i];
               cache_hit_list[i] = nullptr;
+			  
             }
           }
         }
