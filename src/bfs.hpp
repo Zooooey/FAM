@@ -138,7 +138,7 @@ public:
     CacheMap* cache_map = read_cache(cache_file_instream, cache_pool_capacity, total_verts);
     cout << "read_cache done! cache_map size is :"<<cache_map->size() << endl;
     struct timespec t1, t2, res;
-    clock_gettime(CLOCK_MONOTONIC, &t1);
+    //clock_gettime(CLOCK_MONOTONIC, &t1);
     auto vtable = c.p.second.get();
     auto *frontier = &c.frontierA;
     auto *next_frontier = &c.frontierB;
@@ -171,9 +171,9 @@ public:
       for (uint32_t i = 0; i < n; ++i) {// push out updates //make parallel
         uint32_t w = edges[i];
         //clock_gettime(CLOCK_MONOTONIC, &atomic_t1);
-        //if (!vtable[w].visited && vtable[w].update_atomic(round)) {
-        if(vtable[w].cas_visited()){
-          // vtable[w].visited = true;
+        if (!vtable[w].visited && vtable[w].update_atomic(round)) {
+        // if(vtable[w].cas_visited()){
+          vtable[w].visited = true;
           next_frontier->set_bit(w);// activate w
         }
         //clock_gettime(CLOCK_MONOTONIC, &atomic_t2);
@@ -221,10 +221,10 @@ for (uint32_t i = range.begin(); i < range.end(); ++i) {
         cout << endl;
       }
       if (!USE_CACHE) { 
-        cache_map->clear_all();
+        //cache_map->clear_all();
       }
       //struct timespec t1, t2, res;
-      //clock_gettime(CLOCK_MONOTONIC, &t1);
+      clock_gettime(CLOCK_MONOTONIC, &t1);
       famgraph::single_buffer::ccy_for_each_active_batch(
         cache_map, *frontier, my_range, c, bfs_push);
 	  if(DEBUG){

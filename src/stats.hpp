@@ -27,12 +27,14 @@ struct FG_stats
     cache_function_time;// 3) time spent using cache function
   tbb::enumerable_thread_specific<long> pack_window_time;// 4) time spent in pack_window
   tbb::enumerable_thread_specific<long> cache_building_time; 
+  tbb::enumerable_thread_specific<long> foreach_time;
   tbb::enumerable_thread_specific<std::tuple<unsigned int, unsigned int, unsigned int>>
     wrs_verts_sends;
 
   long total_cache_hit{ 0 };
   long total_atomic_time{ 0 };
   long total_spin_time{ 0 };
+  long total_foreach_time{ 0 };
   long total_function_time{ 0 };
   long total_cache_function_time{ 0 };
   long total_pack_window_time{ 0 };
@@ -131,6 +133,11 @@ inline void clear_stats_round(FG_stats &stats)
     t = 0;
   }
 
+  for (auto &t : stats.foreach_time) {
+    stats.foreach_time += t;
+    t = 0;
+  }
+
   for (auto &p : stats.wrs_verts_sends) {
     stats.wrs += std::get<0>(p);
     stats.verts += std::get<1>(p);
@@ -169,6 +176,10 @@ inline void clear_all(FG_stats &stats){
     t = 0;
   }
 
+  for (auto &t : stats.foreach_time) {
+    t = 0;
+  }
+
   stats.total_spin_time = 0;
   stats.total_function_time = 0;
   stats.total_cache_function_time = 0;
@@ -176,6 +187,7 @@ inline void clear_all(FG_stats &stats){
   stats.total_cache_building_time = 0;
   stats.total_atomic_time = 0;
   stats.total_cache_hit = 0;
+  stats.total_foreach_time = 0;
   stats.wrs = 0;
   stats.verts = 0;
   stats.sends = 0 ;
@@ -191,6 +203,10 @@ inline void print_stats_summary(FG_stats const &stats)
     << " Total Function Time (s) "
     //<< static_cast<double>(stats.total_function_time) / 1000000000 / 10
     << static_cast<double>(stats.total_function_time) / 1000000000 
+    << "\n"
+    << " Total For Each Time (s) "
+    //<< static_cast<double>(stats.total_function_time) / 1000000000 / 10
+    << static_cast<double>(stats.total_foreach_time) / 1000000000 
     << "\n"
     << " Total Cache Function Time (s) "
     << static_cast<double>(stats.total_cache_function_time) / 1000000000

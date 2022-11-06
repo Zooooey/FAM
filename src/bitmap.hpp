@@ -477,6 +477,8 @@ namespace single_buffer {
     Context &c,
     F const &function) noexcept
   {
+    struct timespec f_t1, f_t2, f_res;
+    clock_gettime(CLOCK_MONOTONIC, &f_t1);
     auto const idx = c.p.first.get();
     auto RDMA_area = c.RDMA_window.get();
     auto const edge_buf_size = c.edge_buf_size;
@@ -591,6 +593,10 @@ namespace single_buffer {
         }
       }
     });
+    clock_gettime(CLOCK_MONOTONIC, &f_t2);
+    famgraph::timespec_diff(&f_t2, &f_t1, &f_res);
+    ctx->stats.foreach_time.local() +=
+                res.tv_sec * 1000000000L + res.tv_nsec;
     cout << "function call times:" << function_count << " cache count:" << cache_count
          << endl;
     print_stats_round(ctx->stats);
