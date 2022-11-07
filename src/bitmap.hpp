@@ -499,6 +499,8 @@ namespace single_buffer {
       uint32_t const range_end = range.end();
       uint32_t cache_size = range.end() - range.begin();
       CacheElem **cache_hit_list = new CacheElem *[cache_size];
+      struct timespec w_t1, w_t2, w_res;
+      clock_gettime(CLOCK_MONOTONIC, &w_t1);
       while (next_range_start < range_end) {
         // cout<<"start pack window ["<<next_range_start<<","<<range_end<<")"<<endl;
         // every pack_window is a batch, we clear cache list to add new cache vertex.
@@ -595,6 +597,10 @@ namespace single_buffer {
           }
         }
       }
+      clock_gettime(CLOCK_MONOTONIC, &w_t2);
+      famgraph::timespec_diff(&w_t2, &w_t1, &w_res);
+      ctx->stats.while_time.local() +=
+                w_res.tv_sec * 1000000000L + w_res.tv_nsec;
     });
     clock_gettime(CLOCK_MONOTONIC, &f_t2);
     famgraph::timespec_diff(&f_t2, &f_t1, &f_res);
