@@ -10,7 +10,8 @@
 
 #include "communication_runtime.hpp"
 #include "bitmap.hpp"
-#include "Cache.hpp"
+//#include "Cache.hpp"
+#include "/home/ccy/Develop/GraphTools/COrder/Binning.hpp"
 
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
@@ -23,13 +24,13 @@
 #pragma GCC diagnostic ignored "-Wconversion"
 #include <oneapi/tbb.h>
 #pragma GCC diagnostic pop
-#define USE_CACHE 0
-#define CACHE_RATIO 0
+#define USE_CACHE 1
+#define CACHE_RATIO 0.1
 #define TRACE_CACHE 0
 #define TRACE_VERTEX_ID 1
 #define DEBUG 0
 #define DEBUG_EVERY_VERTEX 0
-#define STOP_ROUND 0
+#define STOP_ROUND 2
 
 using namespace std;
 // const char *CACHE_FILE_PATH = "/home/ccy/data_set/soc-LiveJournal1/corder_cache_file";
@@ -124,7 +125,7 @@ public:
   void operator()()
   {
     // ifstream cache_file_instream("cache_file", ios::in | ios::binary);
-    auto const total_verts = c.num_vertices;
+    uint32_t total_verts = c.num_vertices;
     // ifstream cache_file_instream("/home/ccy/data_set/soc-LiveJournal1/cache_file",
     // ios::in | ios::binary);
     void *p = mmap(0,
@@ -139,7 +140,6 @@ public:
       exit(-1);
     }
     CacheMap *cache_map = nullptr;
-    if (USE_CACHE) {
       ifstream cache_file_instream(CACHE_FILE_PATH, ios::in | ios::binary);
       if (!cache_file_instream.good()) {
         cout << "FATAL: open file cache_file failed!" << endl;
@@ -157,11 +157,8 @@ public:
       // build a contigous memory array for cache
       // CacheMap* cache_map = read_cache(cache_file_instream, cache_pool_capacity,
       // total_verts);
-      cache_map = BinReader::read(CACHE_FILE_PATH,
-        static_cast<uint32_t>(total_verts),
-        static_cast<uint64_t>(cache_pool_capacity));
+      cache_map = BinReader::read(CACHE_FILE_PATH, total_verts, cache_pool_capacity);
       cout << "read_cache done! cache_map size is :" << cache_map->size() << endl;
-    }
     struct timespec t1, t2, res;
     // clock_gettime(CLOCK_MONOTONIC, &t1);
     auto vtable = c.p.second.get();
