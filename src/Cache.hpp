@@ -1,5 +1,5 @@
-#ifndef types_h
-#define types_h
+#ifndef Cache_h
+#define Cache_h
 #include <sys/mman.h>
 #include <iostream>
 #include <string.h>

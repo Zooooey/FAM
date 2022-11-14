@@ -522,14 +522,14 @@ namespace single_buffer {
         clock_gettime(CLOCK_MONOTONIC, &t2);
         famgraph::timespec_diff(&t2, &t1, &res);
         ctx->stats.pack_window_time.local() += res.tv_sec * 1000000000L + res.tv_nsec;
-        // cout<<"cache hit"cache_hit_list.size()
+        
         next_range_start = next;
 
         struct ibv_send_wr *bad_wr = NULL;
         struct ibv_send_wr &wr = my_window[0];
 
         if (wrs > 0) {
-          TEST_NZ(ibv_post_send((ctx->cm_ids)[worker_id]->qp, &wr, &bad_wr));
+          TEST_NZ(ibv_post_send((ctx->cm_ids)[worker_id]->qp, &r, &bad_wr));
           // While we waiting the RDMA result, we can process cache vertex.
           for (uint32_t i = 0; i < cache_size; i++) {
             if (cache_hit_list[i] != nullptr) {
@@ -590,7 +590,7 @@ namespace single_buffer {
               famgraph::timespec_diff(&t2, &t1, &res);
               ctx->stats.cache_function_time.local() +=
                 res.tv_sec * 1000000000L + res.tv_nsec;
-			  delete cache_hit_list[i];
+			        delete cache_hit_list[i];
               cache_hit_list[i] = nullptr;
 			  
             }

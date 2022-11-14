@@ -10,7 +10,7 @@
 
 #include "communication_runtime.hpp"
 #include "bitmap.hpp"
-#include "types.hpp"
+#include "/home/ccy/Develop/GraphTools/COrder/Binning.hpp"
 
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
