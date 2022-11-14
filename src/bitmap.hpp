@@ -32,7 +32,7 @@
 #include "vertex_table.hpp"//move later
 #include <connection_utils.hpp>//move later
 #include "communication_runtime.hpp"
-#include "types.hpp"
+#include "Cache.hpp"
 #include <boost/log/trivial.hpp>//remove later
 
 #define WORD_OFFSET(i) (i >> 6)
@@ -529,7 +529,7 @@ namespace single_buffer {
         struct ibv_send_wr &wr = my_window[0];
 
         if (wrs > 0) {
-          TEST_NZ(ibv_post_send((ctx->cm_ids)[worker_id]->qp, &r, &bad_wr));
+          TEST_NZ(ibv_post_send((ctx->cm_ids)[worker_id]->qp, &wr, &bad_wr));
           // While we waiting the RDMA result, we can process cache vertex.
           for (uint32_t i = 0; i < cache_size; i++) {
             if (cache_hit_list[i] != nullptr) {

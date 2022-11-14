@@ -24,7 +24,7 @@
 #include <oneapi/tbb.h>
 #pragma GCC diagnostic pop
 #define USE_CACHE 0
-#define CACHE_RATIO 1
+#define CACHE_RATIO 0
 #define TRACE_CACHE 0
 #define TRACE_VERTEX_ID 1
 #define DEBUG 0
@@ -33,7 +33,8 @@
 
 using namespace std;
 //const char *CACHE_FILE_PATH = "/home/ccy/data_set/soc-LiveJournal1/corder_cache_file";
-const char *CACHE_FILE_PATH = "/home/ccy/data_set/MOLIERE_2016_FAM_GRAPH/out_degree_first.cache";
+//const char *CACHE_FILE_PATH = "/home/ccy/data_set/MOLIERE_2016_FAM_GRAPH/out_degree_first.cache";
+ char CACHE_FILE_PATH[] = "/home/ccy/data_set/soc-LiveJournal1/bin_order.cache";
 //const char *CACHE_FILE_PATH = "/home/ccy/data_set/soc-LiveJournal1/out_degree_first.cache";
 
 namespace bfs {
@@ -41,7 +42,7 @@ constexpr uint32_t NULLVERT = 0xFFFFFFFF;
 
 // ccy code
 
-static CacheMap *read_cache(ifstream &cache_file,
+/*static CacheMap *read_cache(ifstream &cache_file,
   size_t capacity, uint32_t total_vert)
 {
   uint64_t cache_new_count = 0;
@@ -77,7 +78,7 @@ static CacheMap *read_cache(ifstream &cache_file,
       cache_file.read(buff, sizeof(unsigned int));
       uint32_t target_vertex = *(reinterpret_cast<uint32_t *>(buff));
       v_struct->set_neighbor_at(i, target_vertex);
-      //*(v_struct->neightbors + static_cast<uint32_t>(i)) = target_vertex;
+      (v_struct->neightbors + static_cast<uint32_t>(i)) = target_vertex;
       if (vertex_id == TRACE_VERTEX_ID && TRACE_CACHE) {
         CACHE_TRACE << " " << target_vertex;
       }
@@ -88,7 +89,7 @@ static CacheMap *read_cache(ifstream &cache_file,
     //to_return->insert({ v_struct->vertex_id, v_struct });
   }
   return to_return;
-}
+}*/
 
 // ccy end
 
@@ -124,11 +125,6 @@ public:
     auto const total_verts = c.num_vertices;
     // ifstream cache_file_instream("/home/ccy/data_set/soc-LiveJournal1/cache_file",
     // ios::in | ios::binary);
-    ifstream cache_file_instream(CACHE_FILE_PATH, ios::in | ios::binary);
-    if (!cache_file_instream.good()) {
-      cout << "FATAL: open file cache_file failed!" << endl;
-      exit(-1);
-    }
 	void *p =  mmap(0, sizeof(uint32_t)*80, PROT_READ | PROT_WRITE , MAP_PRIVATE | MAP_ANONYMOUS, 
 -1, 0);
 	if(p == MAP_FAILED){
@@ -136,18 +132,27 @@ public:
 		printf("Error mmaping test: %s\n", strerror(errno));
 		exit(-1);
 	}
+	CacheMap * cache_map = nullptr;
+	if(USE_CACHE){
+    ifstream cache_file_instream(CACHE_FILE_PATH, ios::in | ios::binary);
+    if (!cache_file_instream.good()) {
+      cout << "FATAL: open file cache_file failed!" << endl;
+      exit(-1);
+    }
     cache_file_instream.seekg(0, cache_file_instream.end);
     long cache_file_size = cache_file_instream.tellg();
     cache_file_instream.seekg(0, cache_file_instream.beg);
     cout<<"Cache size is "  << cache_file_size<<" bytes"<<endl;
     cout<<"Cache ratio is "<<CACHE_RATIO<<endl;
-	  double ret = floor(static_cast<double>(cache_file_size)*CACHE_RATIO);
+	double ret = floor(static_cast<double>(cache_file_size)*CACHE_RATIO);
     uint64_t cache_pool_capacity = static_cast<uint64_t>(ret);
     cout<<"Cache capacity is :"<<cache_pool_capacity<<endl;
 
     //build a contigous memory array for cache
-    CacheMap* cache_map = read_cache(cache_file_instream, cache_pool_capacity, total_verts);
+    //CacheMap* cache_map = read_cache(cache_file_instream, cache_pool_capacity, total_verts);
+	cache_map = BinReader::read(CACHE_FILE_PATH, static_cast<uint32_t>(total_verts),  static_cast<uint64_t>(cache_pool_capacity));
     cout << "read_cache done! cache_map size is :"<<cache_map->size() << endl;
+	}
     struct timespec t1, t2, res;
     //clock_gettime(CLOCK_MONOTONIC, &t1);
     auto vtable = c.p.second.get();

@@ -47,16 +47,16 @@ public:
 class CacheMap
 {
 private:
-  CacheElem **all_cache;
-  uint32_t total_vertices = 0;
+  CacheElem **all_cache = nullptr;
+  uint32_t total_vert = 0;
 
 public:
-  CacheMap(uint32_t total_verts)
+  CacheMap(uint32_t total_v)
   {
-    total_vertices = total_verts;
-    all_cache = new CacheElem*[total_verts];
+    total_vert = total_v;
+    all_cache = new CacheElem*[total_vert];
 	//(CacheElem*)sizeof(CacheElem*) * total_verts;
-    for (uint32_t i = 0; i < total_verts; i++) { all_cache[i] = nullptr; }
+    for (uint32_t i = 0; i < total_vert; i++) { all_cache[i] = nullptr; }
   }
 
   void put(uint32_t vertex_id, CacheElem *elem)
@@ -67,11 +67,11 @@ public:
 
   CacheElem *get(uint32_t vertex_id) { return all_cache[vertex_id]; }
 
-  size_t size() { return total_vertices; }
+  size_t size() { return total_vert; }
 
   void clear_all()
   {
-    for (uint32_t i = 0; i < total_vertices; i++) {
+    for (uint32_t i = 0; i < total_vert; i++) {
       if (all_cache[i] != nullptr) {
         delete all_cache[i];
         all_cache[i] = nullptr;
@@ -134,7 +134,7 @@ public:
                     bin_in.read(buff, 4);
                     uint32_t neighbor_id = *reinterpret_cast<uint32_t *>(buff);
                     //cout<<"     neighbor_id:"<<neighbor_id<<endl;
-                    vertexCache->set_neighbor_at(k, neighbor_id);
+                    vertexCache->set_neighbor_at(static_cast<uint32_t>(k), neighbor_id);
                 }
                 cacheMap->put(vertex_id, vertexCache);
             }
