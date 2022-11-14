@@ -32,13 +32,64 @@
 #define STOP_ROUND 0
 
 using namespace std;
-//const char *CACHE_FILE_PATH = "/home/ccy/data_set/soc-LiveJournal1/corder_cache_file";
-//const char *CACHE_FILE_PATH = "/home/ccy/data_set/MOLIERE_2016_FAM_GRAPH/out_degree_first.cache";
- char CACHE_FILE_PATH[] = "/home/ccy/data_set/soc-LiveJournal1/bin_order.cache";
-//const char *CACHE_FILE_PATH = "/home/ccy/data_set/soc-LiveJournal1/out_degree_first.cache";
+// const char *CACHE_FILE_PATH = "/home/ccy/data_set/soc-LiveJournal1/corder_cache_file";
+// const char *CACHE_FILE_PATH =
+// "/home/ccy/data_set/MOLIERE_2016_FAM_GRAPH/out_degree_first.cache";
+char CACHE_FILE_PATH[] = "/home/ccy/data_set/soc-LiveJournal1/bin_order.cache";
+// const char *CACHE_FILE_PATH =
+// "/home/ccy/data_set/soc-LiveJournal1/out_degree_first.cache";
 
 namespace bfs {
 constexpr uint32_t NULLVERT = 0xFFFFFFFF;
+CacheMap *read(char *path_to_read, uint32_t total_vert, uint64_t capacity)
+{
+  // cout<<"read bin cache!!!!!!!!!!!!"<<endl;
+  CacheMap *cacheMap = new CacheMap(total_vert);
+  uint64_t current_cache_size = 0;
+  ifstream bin_in(path_to_read, ios::in | ios::binary);
+  if (!bin_in.good()) {
+    cout << "open " << path_to_read << " failed!" << endl;
+    exit(-1);
+  }
+  char buff[4096];
+  bin_in.read(buff, 8);
+  uint64_t bin_num = *reinterpret_cast<uint64_t *>(buff);
+  // cout<<"bin num is :"<<bin_num<<endl;
+  // Foreach every bins.
+  for (uint64_t i = 0; i < bin_num; i++) {
+    bin_in.read(buff, 8);
+    uint64_t bin_vertex_num = *reinterpret_cast<uint64_t *>(buff);
+
+    bin_in.read(buff, 8);
+    uint64_t edges_bytes = *reinterpret_cast<uint64_t *>(buff);
+    // cout<<"bin number:"<<i<<" vertex_num on
+    // bin:"<<bin_vertex_num<<"edges_bytes:"<<edges_bytes<<endl;
+    if (current_cache_size + edges_bytes > capacity) {
+      break;
+    } else {
+      current_cache_size += edges_bytes;
+    }
+    // Read each vertex of current Bin.
+    for (uint64_t j = 0; j < bin_vertex_num; j++) {
+      bin_in.read(buff, 4);
+      uint32_t vertex_id = *reinterpret_cast<uint32_t *>(buff);
+      bin_in.read(buff, 8);
+      uint64_t out_degree = *reinterpret_cast<uint64_t *>(buff);
+      // cout<<" vertex_id:"<<vertex_id<<" out_degree:"<<out_degree<<endl;
+      CacheElem *vertexCache = new CacheElem(vertex_id, out_degree);
+      // Read neighbors id of one vertex.
+      for (uint64_t k = 0; k < out_degree; k++) {
+        bin_in.read(buff, 4);
+        uint32_t neighbor_id = *reinterpret_cast<uint32_t *>(buff);
+        // cout<<"     neighbor_id:"<<neighbor_id<<endl;
+        vertexCache->set_neighbor_at(static_cast<uint32_t>(k), neighbor_id);
+      }
+      cacheMap->put(vertex_id, vertexCache);
+    }
+  }
+  bin_in.close();
+  return cacheMap;
+}
 
 // ccy code
 
@@ -46,7 +97,7 @@ constexpr uint32_t NULLVERT = 0xFFFFFFFF;
   size_t capacity, uint32_t total_vert)
 {
   uint64_t cache_new_count = 0;
-	
+
   char buff[256];
   size_t cur_have_been_read_bytes = 0;
   ofstream CACHE_TRACE("cache_logic.trace", ios::out);
@@ -69,8 +120,8 @@ constexpr uint32_t NULLVERT = 0xFFFFFFFF;
     }
 
     CacheElem *v_struct = new CacheElem(vertex_id, out_vertices_num);
-	cache_new_count+=out_vertices_num;
-	//cout<<"out_vertices_num:"<<cache_new_count<<endl;
+        cache_new_count+=out_vertices_num;
+        //cout<<"out_vertices_num:"<<cache_new_count<<endl;
     if (vertex_id == TRACE_VERTEX_ID && TRACE_CACHE) {
       CACHE_TRACE << "displaying target_verices of vertex_id:" << TRACE_VERTEX_ID << endl;
     }
@@ -96,8 +147,8 @@ constexpr uint32_t NULLVERT = 0xFFFFFFFF;
 struct bfs_vertex
 {
   std::atomic<uint32_t> parent{ NULLVERT };
-  //bool visited = false;
-  std::atomic<bool> visited{false};
+  // bool visited = false;
+  std::atomic<bool> visited{ false };
 
   /*bool cas_visited(){
     return visited.compare_exchange_strong(false, true)
@@ -125,36 +176,43 @@ public:
     auto const total_verts = c.num_vertices;
     // ifstream cache_file_instream("/home/ccy/data_set/soc-LiveJournal1/cache_file",
     // ios::in | ios::binary);
-	void *p =  mmap(0, sizeof(uint32_t)*80, PROT_READ | PROT_WRITE , MAP_PRIVATE | MAP_ANONYMOUS, 
--1, 0);
-	if(p == MAP_FAILED){
-		cout<<"mmap failed for test!"<<endl;
-		printf("Error mmaping test: %s\n", strerror(errno));
-		exit(-1);
-	}
-	CacheMap * cache_map = nullptr;
-	if(USE_CACHE){
-    ifstream cache_file_instream(CACHE_FILE_PATH, ios::in | ios::binary);
-    if (!cache_file_instream.good()) {
-      cout << "FATAL: open file cache_file failed!" << endl;
+    void *p = mmap(0,
+      sizeof(uint32_t) * 80,
+      PROT_READ | PROT_WRITE,
+      MAP_PRIVATE | MAP_ANONYMOUS,
+      -1,
+      0);
+    if (p == MAP_FAILED) {
+      cout << "mmap failed for test!" << endl;
+      printf("Error mmaping test: %s\n", strerror(errno));
       exit(-1);
     }
-    cache_file_instream.seekg(0, cache_file_instream.end);
-    long cache_file_size = cache_file_instream.tellg();
-    cache_file_instream.seekg(0, cache_file_instream.beg);
-    cout<<"Cache size is "  << cache_file_size<<" bytes"<<endl;
-    cout<<"Cache ratio is "<<CACHE_RATIO<<endl;
-	double ret = floor(static_cast<double>(cache_file_size)*CACHE_RATIO);
-    uint64_t cache_pool_capacity = static_cast<uint64_t>(ret);
-    cout<<"Cache capacity is :"<<cache_pool_capacity<<endl;
+    CacheMap *cache_map = nullptr;
+    if (USE_CACHE) {
+      ifstream cache_file_instream(CACHE_FILE_PATH, ios::in | ios::binary);
+      if (!cache_file_instream.good()) {
+        cout << "FATAL: open file cache_file failed!" << endl;
+        exit(-1);
+      }
+      cache_file_instream.seekg(0, cache_file_instream.end);
+      long cache_file_size = cache_file_instream.tellg();
+      cache_file_instream.seekg(0, cache_file_instream.beg);
+      cout << "Cache size is " << cache_file_size << " bytes" << endl;
+      cout << "Cache ratio is " << CACHE_RATIO << endl;
+      double ret = floor(static_cast<double>(cache_file_size) * CACHE_RATIO);
+      uint64_t cache_pool_capacity = static_cast<uint64_t>(ret);
+      cout << "Cache capacity is :" << cache_pool_capacity << endl;
 
-    //build a contigous memory array for cache
-    //CacheMap* cache_map = read_cache(cache_file_instream, cache_pool_capacity, total_verts);
-	cache_map = BinReader::read(CACHE_FILE_PATH, static_cast<uint32_t>(total_verts),  static_cast<uint64_t>(cache_pool_capacity));
-    cout << "read_cache done! cache_map size is :"<<cache_map->size() << endl;
-	}
+      // build a contigous memory array for cache
+      // CacheMap* cache_map = read_cache(cache_file_instream, cache_pool_capacity,
+      // total_verts);
+      cache_map = BinReader::read(CACHE_FILE_PATH,
+        static_cast<uint32_t>(total_verts),
+        static_cast<uint64_t>(cache_pool_capacity));
+      cout << "read_cache done! cache_map size is :" << cache_map->size() << endl;
+    }
     struct timespec t1, t2, res;
-    //clock_gettime(CLOCK_MONOTONIC, &t1);
+    // clock_gettime(CLOCK_MONOTONIC, &t1);
     auto vtable = c.p.second.get();
     auto *frontier = &c.frontierA;
     auto *next_frontier = &c.frontierB;
@@ -176,34 +234,34 @@ public:
     frontier->set_bit(start_v);
     tbb::parallel_for(my_range, [&](auto const &range) {
       for (uint32_t i = range.begin(); i < range.end(); ++i) {
-          vtable[i].visited = false;
+        vtable[i].visited = false;
       }
     });
     vtable[start_v].update_atomic(0);// 0 distance to self
     uint32_t round = 0;
-    //struct timespec atomic_t1, atomic_t2, atomic_res;
+    // struct timespec atomic_t1, atomic_t2, atomic_res;
     auto bfs_push = [&](
                       uint32_t const, uint32_t *const edges, uint32_t const n) noexcept {
       for (uint32_t i = 0; i < n; ++i) {// push out updates //make parallel
         uint32_t w = edges[i];
-        //clock_gettime(CLOCK_MONOTONIC, &atomic_t1);
+        // clock_gettime(CLOCK_MONOTONIC, &atomic_t1);
         if (!vtable[w].visited && vtable[w].update_atomic(round)) {
-        // if(vtable[w].cas_visited()){
+          // if(vtable[w].cas_visited()){
           vtable[w].visited = true;
           next_frontier->set_bit(w);// activate w
         }
-        //clock_gettime(CLOCK_MONOTONIC, &atomic_t2);
-        //famgraph::timespec_diff(&atomic_t2, &atomic_t1, &atomic_res);
-        //c.context->stats.atomic_time.local() +=
-         // atomic_res.tv_sec * 1000000000L + atomic_res.tv_nsec;
+        // clock_gettime(CLOCK_MONOTONIC, &atomic_t2);
+        // famgraph::timespec_diff(&atomic_t2, &atomic_t1, &atomic_res);
+        // c.context->stats.atomic_time.local() +=
+        //  atomic_res.tv_sec * 1000000000L + atomic_res.tv_nsec;
       }
     };
     while (!frontier->is_empty()) {
       ++round;
-      //if (round == 5) {
-      //  cout << "stop in round 5!" << endl;
-      //  exit(-1);
-     // }
+      // if (round == 5) {
+      //   cout << "stop in round 5!" << endl;
+      //   exit(-1);
+      // }
       /*uint64_t round_frontier_count = 0;
 /tbb::parallel_for(my_range, [&](auto const &range) {
 for (uint32_t i = range.begin(); i < range.end(); ++i) {
@@ -236,34 +294,33 @@ for (uint32_t i = range.begin(); i < range.end(); ++i) {
         });
         cout << endl;
       }
-      if (!USE_CACHE) { 
-        cache_map->clear_all();
-      }
-      //struct timespec t1, t2, res;
+      if (!USE_CACHE) { cache_map->clear_all(); }
+      // struct timespec t1, t2, res;
       clock_gettime(CLOCK_MONOTONIC, &t1);
       famgraph::single_buffer::ccy_for_each_active_batch(
         cache_map, *frontier, my_range, c, bfs_push);
-	  if(DEBUG){
-      cout << "next_frontier collide count:" << next_frontier->collide_count << endl;
-      cout << "next_frontier no_collide count:" << next_frontier->no_collide_count
-           << endl;
-      cout << "next_frontier size:" << next_frontier->num_set() << endl;
+      if (DEBUG) {
+        cout << "next_frontier collide count:" << next_frontier->collide_count << endl;
+        cout << "next_frontier no_collide count:" << next_frontier->no_collide_count
+             << endl;
+        cout << "next_frontier size:" << next_frontier->num_set() << endl;
       }
       frontier->clear();
       std::swap(frontier, next_frontier);
-      //clock_gettime(CLOCK_MONOTONIC, &t2);
-      //famgraph::timespec_diff(&t2, &t1, &res);
-      //BOOST_LOG_TRIVIAL(info) << "round:" << round << " bfs time(milli seconds):"
-      //                       << (res.tv_sec * 1000000000L + res.tv_nsec) / 1000000;
-      if(DEBUG){
-      	famgraph::print_stats_summary(c.context->stats);
-      	famgraph::clear_all(c.context->stats);
-		}
+      // clock_gettime(CLOCK_MONOTONIC, &t2);
+      // famgraph::timespec_diff(&t2, &t1, &res);
+      // BOOST_LOG_TRIVIAL(info) << "round:" << round << " bfs time(milli seconds):"
+      //                        << (res.tv_sec * 1000000000L + res.tv_nsec) / 1000000;
+      if (DEBUG) {
+        famgraph::print_stats_summary(c.context->stats);
+        famgraph::clear_all(c.context->stats);
+      }
     }
     clock_gettime(CLOCK_MONOTONIC, &t2);
     famgraph::timespec_diff(&t2, &t1, &res);
-    BOOST_LOG_TRIVIAL(info) << "time consume without cache reading(s):" 
-                            << static_cast<double>(res.tv_sec * 1000000000L + res.tv_nsec) / 1000000000;
+    BOOST_LOG_TRIVIAL(info) << "time consume without cache reading(s):"
+                            << static_cast<double>(res.tv_sec * 1000000000L + res.tv_nsec)
+                                 / 1000000000;
     BOOST_LOG_TRIVIAL(info) << "bfs rounds " << round;
   }
   void print_result() {}
