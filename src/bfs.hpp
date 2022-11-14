@@ -41,55 +41,6 @@ char CACHE_FILE_PATH[] = "/home/ccy/data_set/soc-LiveJournal1/bin_order.cache";
 
 namespace bfs {
 constexpr uint32_t NULLVERT = 0xFFFFFFFF;
-CacheMap *read(char *path_to_read, uint32_t total_vert, uint64_t capacity)
-{
-  // cout<<"read bin cache!!!!!!!!!!!!"<<endl;
-  CacheMap *cacheMap = new CacheMap(total_vert);
-  uint64_t current_cache_size = 0;
-  ifstream bin_in(path_to_read, ios::in | ios::binary);
-  if (!bin_in.good()) {
-    cout << "open " << path_to_read << " failed!" << endl;
-    exit(-1);
-  }
-  char buff[4096];
-  bin_in.read(buff, 8);
-  uint64_t bin_num = *reinterpret_cast<uint64_t *>(buff);
-  // cout<<"bin num is :"<<bin_num<<endl;
-  // Foreach every bins.
-  for (uint64_t i = 0; i < bin_num; i++) {
-    bin_in.read(buff, 8);
-    uint64_t bin_vertex_num = *reinterpret_cast<uint64_t *>(buff);
-
-    bin_in.read(buff, 8);
-    uint64_t edges_bytes = *reinterpret_cast<uint64_t *>(buff);
-    // cout<<"bin number:"<<i<<" vertex_num on
-    // bin:"<<bin_vertex_num<<"edges_bytes:"<<edges_bytes<<endl;
-    if (current_cache_size + edges_bytes > capacity) {
-      break;
-    } else {
-      current_cache_size += edges_bytes;
-    }
-    // Read each vertex of current Bin.
-    for (uint64_t j = 0; j < bin_vertex_num; j++) {
-      bin_in.read(buff, 4);
-      uint32_t vertex_id = *reinterpret_cast<uint32_t *>(buff);
-      bin_in.read(buff, 8);
-      uint64_t out_degree = *reinterpret_cast<uint64_t *>(buff);
-      // cout<<" vertex_id:"<<vertex_id<<" out_degree:"<<out_degree<<endl;
-      CacheElem *vertexCache = new CacheElem(vertex_id, out_degree);
-      // Read neighbors id of one vertex.
-      for (uint64_t k = 0; k < out_degree; k++) {
-        bin_in.read(buff, 4);
-        uint32_t neighbor_id = *reinterpret_cast<uint32_t *>(buff);
-        // cout<<"     neighbor_id:"<<neighbor_id<<endl;
-        vertexCache->set_neighbor_at(static_cast<uint32_t>(k), neighbor_id);
-      }
-      cacheMap->put(vertex_id, vertexCache);
-    }
-  }
-  bin_in.close();
-  return cacheMap;
-}
 
 // ccy code
 
