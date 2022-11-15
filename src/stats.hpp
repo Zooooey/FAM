@@ -235,7 +235,7 @@ inline void print_stats_summary(FG_stats const &stats)
     << static_cast<double>(stats.total_atomic_time) / 1000000000
     << "\n"
     << " Total Cache hit: "
-    << static_cast<double>(stats.total_cache_hit)
+    << stats.total_cache_hit
     << "\n"
     << " WR's: " << stats.wrs << " sends: " << stats.sends << std::endl;
 }

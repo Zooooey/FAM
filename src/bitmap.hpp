@@ -33,6 +33,7 @@
 #include <connection_utils.hpp>//move later
 #include "communication_runtime.hpp"
 #include "Cache.hpp"
+#include "Common.hpp"
 #include <boost/log/trivial.hpp>//remove later
 
 #define WORD_OFFSET(i) (i >> 6)
@@ -185,7 +186,7 @@ auto cache_pack_window(CacheMap *cache_map,
   uint32_t v = range_start;
   struct timespec t1, t2, res;
   uint32_t cache_index = 0;
-
+	//cout<<"ccy:oh!"<<endl;
 
   while ((total_edges < edge_buf_size) && (wrs < famgraph::WR_WINDOW_SIZE)
          && (v < range_end)) {
@@ -195,11 +196,11 @@ auto cache_pack_window(CacheMap *cache_map,
 
       bool in_cache = cache_elem != nullptr;
       if (in_cache) {
-        // cout<<"cache hit:"<<v<<endl;
+         //cout<<"cache hit:"<<v<<endl;
         //cache_hit_list[cache_index++] = cache_elem;
         //cache_hit_list[cache_index++] = nullptr;
         // This vertex is in cache, NEXT ONE!!
-        function(cache_elem->get_vertex_id(), cache_elem->get_neighbors(), cache_elem->get_out_degree);
+        function(cache_elem->get_vertex_id(), cache_elem->get_neighbors(), cache_elem->get_out_degree());
         ctx->stats.cache_hit.local() += 1;
         v++;
         clock_gettime(CLOCK_MONOTONIC, &t2);
@@ -211,6 +212,7 @@ auto cache_pack_window(CacheMap *cache_map,
         famgraph::timespec_diff(&t2, &t1, &res);
         ctx->stats.cache_building_time.local() += res.tv_sec * 1000000000L + res.tv_nsec;
       }
+	//cout<<"ccy:point3"<<endl;
 
       uint32_t const n_out_edge =
         famgraph::get_num_edges(v, vtable, g_total_verts, g_total_edges);
@@ -481,6 +483,7 @@ namespace single_buffer {
     Context &c,
     F const &function) noexcept
   {
+	//cout<<"ccy:for_each"<<endl;
     struct timespec f_t1, f_t2, f_res;
     clock_gettime(CLOCK_MONOTONIC, &f_t1);
     auto const idx = c.p.first.get();
@@ -528,7 +531,7 @@ namespace single_buffer {
         ctx->stats.pack_window_time.local() += res.tv_sec * 1000000000L + res.tv_nsec;
         
         next_range_start = next;
-
+		//cout<<"ccy: next_range_start:"<<next_range_start<<endl;
         struct ibv_send_wr *bad_wr = NULL;
         struct ibv_send_wr &wr = my_window[0];
 
@@ -555,7 +558,9 @@ namespace single_buffer {
             }
           }*/
           uint32_t volatile *e_buf = edge_buf;
+			//cout<<"ccy:handle rdma. wrs:"<<wrs<<endl;
           for (uint32_t i = 0; i < wrs; ++i) {
+			//cout<<"ccy: current wr:"<<i<<endl;
             //这个应该是一个点的范围，遍历这个点的范围，还要根据点获取边列表。
             for (uint32_t v = vertex_batch[i].v_s; v <= vertex_batch[i].v_e; v++) {
               clock_gettime(CLOCK_MONOTONIC, &t1);
@@ -600,17 +605,19 @@ namespace single_buffer {
           }*/
         }
       }
-      clock_gettime(CLOCK_MONOTONIC, &w_t2);
+	//cout<<"ccy:fu!"<<endl;
+      /*clock_gettime(CLOCK_MONOTONIC, &w_t2);
       famgraph::timespec_diff(&w_t2, &w_t1, &w_res);
       ctx->stats.while_time.local() +=
-                w_res.tv_sec * 1000000000L + w_res.tv_nsec;
+                w_res.tv_sec * 1000000000L + w_res.tv_nsec;*/
     });
-    clock_gettime(CLOCK_MONOTONIC, &f_t2);
+    /*clock_gettime(CLOCK_MONOTONIC, &f_t2);
     famgraph::timespec_diff(&f_t2, &f_t1, &f_res);
     ctx->stats.foreach_time.local() +=
                 f_res.tv_sec * 1000000000L + f_res.tv_nsec;
     cout << "function call times:" << function_count << " cache count:" << cache_count
-         << endl;
+         << endl;*/
+	//cout<<"ccy:ethen!"<<endl;
     print_stats_round(ctx->stats);
     clear_stats_round(ctx->stats);
   }

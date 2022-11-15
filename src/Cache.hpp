@@ -74,18 +74,15 @@ public:
 
   void clear_all()
   {
-	cout<<"ccy4"<<endl;
 	if(verts == 0){
 		return;
 	}
-	cout<<"ccy5"<<endl;
     for (uint32_t i = 0; i < verts; i++) {
       if (all_cache[i] != nullptr) {
         delete all_cache[i];
         all_cache[i] = nullptr;
       }
     }
-	cout<<"ccy6"<<endl;
   }
 
   ~CacheMap() { delete[] all_cache; }

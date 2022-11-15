@@ -24,11 +24,10 @@
 #pragma GCC diagnostic ignored "-Wconversion"
 #include <oneapi/tbb.h>
 #pragma GCC diagnostic pop
-#define USE_CACHE 1
-#define CACHE_RATIO 0.1
+#define USE_CACHE 0
+#define CACHE_RATIO 0
 #define TRACE_CACHE 0
 #define TRACE_VERTEX_ID 1
-#define DEBUG 0
 #define DEBUG_EVERY_VERTEX 0
 #define STOP_ROUND 2
 
@@ -36,7 +35,8 @@ using namespace std;
 // const char *CACHE_FILE_PATH = "/home/ccy/data_set/soc-LiveJournal1/corder_cache_file";
 // const char *CACHE_FILE_PATH =
 // "/home/ccy/data_set/MOLIERE_2016_FAM_GRAPH/out_degree_first.cache";
-char CACHE_FILE_PATH[] = "/home/ccy/data_set/soc-LiveJournal1/bin_order.cache";
+//char CACHE_FILE_PATH[] = "/home/ccy/data_set/soc-LiveJournal1/bin_order.cache";
+char CACHE_FILE_PATH[] = "/home/ccy/data_set/MOLIERE_2016_FAM_GRAPH/bin_order.cache";
 // const char *CACHE_FILE_PATH =
 // "/home/ccy/data_set/soc-LiveJournal1/out_degree_first.cache";
 
@@ -159,6 +159,7 @@ public:
       // total_verts);
       cache_map = BinReader::read(CACHE_FILE_PATH, total_verts, cache_pool_capacity);
       cout << "read_cache done! cache_map size is :" << cache_map->size() << endl;
+  tbb::tick_count tbbt0 = tbb::tick_count::now();
     struct timespec t1, t2, res;
     // clock_gettime(CLOCK_MONOTONIC, &t1);
     auto vtable = c.p.second.get();
@@ -243,6 +244,7 @@ for (uint32_t i = range.begin(); i < range.end(); ++i) {
         cout << endl;
       }
       if (!USE_CACHE) { cache_map->clear_all(); }
+	  //cout<<"here?"<<endl;
       // struct timespec t1, t2, res;
       clock_gettime(CLOCK_MONOTONIC, &t1);
       famgraph::single_buffer::ccy_for_each_active_batch(
@@ -270,6 +272,8 @@ for (uint32_t i = range.begin(); i < range.end(); ++i) {
                             << static_cast<double>(res.tv_sec * 1000000000L + res.tv_nsec)
                                  / 1000000000;
     BOOST_LOG_TRIVIAL(info) << "bfs rounds " << round;
+  	tbb::tick_count tbbt1 = tbb::tick_count::now();
+  	BOOST_LOG_TRIVIAL(info) << "BFS Running(without cache reading) Time(s): " << (tbbt1 - tbbt0).seconds();
   }
   void print_result() {}
 };
