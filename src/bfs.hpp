@@ -24,8 +24,8 @@
 #pragma GCC diagnostic ignored "-Wconversion"
 #include <oneapi/tbb.h>
 #pragma GCC diagnostic pop
-#define USE_CACHE 0
-#define CACHE_RATIO 0
+#define USE_CACHE 1
+#define CACHE_RATIO 0.4
 #define TRACE_CACHE 0
 #define TRACE_VERTEX_ID 1
 #define DEBUG_EVERY_VERTEX 0
@@ -128,9 +128,10 @@ public:
     1. cache_file_path
     2. cache_ratio
     */
+    uint32_t total_verts = c.num_vertices;
     cout << "Cache ratio is " << CACHE_RATIO << endl;
     CacheMap *cache_map =
-      BinReader::read_bin_cache(CACHE_FILE_PATH, CACHE_RATIO, c.num_vertices);
+      BinReader::read_bin_cache(CACHE_FILE_PATH, CACHE_RATIO, total_verts);
     cout << "read_cache done! cache_map size is :" << cache_map->size() << endl;
     tbb::tick_count tbbt0 = tbb::tick_count::now();
     struct timespec t1, t2, res;
@@ -138,7 +139,7 @@ public:
     auto vtable = c.p.second.get();
     auto *frontier = &c.frontierA;
     auto *next_frontier = &c.frontierB;
-    tbb::blocked_range<uint32_t> const my_range(0, total_verts);
+    tbb::blocked_range<uint32_t> const my_range(0,total_verts );
 
     //===========TRACE file to debug =============
     ofstream TRACE("trace.log", ios::out);
