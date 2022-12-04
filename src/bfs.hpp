@@ -124,42 +124,15 @@ public:
   {}
   void operator()()
   {
-    // ifstream cache_file_instream("cache_file", ios::in | ios::binary);
-    uint32_t total_verts = c.num_vertices;
-    // ifstream cache_file_instream("/home/ccy/data_set/soc-LiveJournal1/cache_file",
-    // ios::in | ios::binary);
-    void *p = mmap(0,
-      sizeof(uint32_t) * 80,
-      PROT_READ | PROT_WRITE,
-      MAP_PRIVATE | MAP_ANONYMOUS,
-      -1,
-      0);
-    if (p == MAP_FAILED) {
-      cout << "mmap failed for test!" << endl;
-      printf("Error mmaping test: %s\n", strerror(errno));
-      exit(-1);
-    }
-    CacheMap *cache_map = nullptr;
-      ifstream cache_file_instream(CACHE_FILE_PATH, ios::in | ios::binary);
-      if (!cache_file_instream.good()) {
-        cout << "FATAL: open file cache_file failed!" << endl;
-        exit(-1);
-      }
-      cache_file_instream.seekg(0, cache_file_instream.end);
-      long cache_file_size = cache_file_instream.tellg();
-      cache_file_instream.seekg(0, cache_file_instream.beg);
-      cout << "Cache size is " << cache_file_size << " bytes" << endl;
-      cout << "Cache ratio is " << CACHE_RATIO << endl;
-      double ret = floor(static_cast<double>(cache_file_size) * CACHE_RATIO);
-      uint64_t cache_pool_capacity = static_cast<uint64_t>(ret);
-      cout << "Cache capacity is :" << cache_pool_capacity << endl;
-
-      // build a contigous memory array for cache
-      // CacheMap* cache_map = read_cache(cache_file_instream, cache_pool_capacity,
-      // total_verts);
-      cache_map = BinReader::read(CACHE_FILE_PATH, total_verts, cache_pool_capacity);
-      cout << "read_cache done! cache_map size is :" << cache_map->size() << endl;
-  tbb::tick_count tbbt0 = tbb::tick_count::now();
+    /*
+    1. cache_file_path
+    2. cache_ratio
+    */
+    cout << "Cache ratio is " << CACHE_RATIO << endl;
+    CacheMap *cache_map =
+      BinReader::read_bin_cache(CACHE_FILE_PATH, CACHE_RATIO, c.num_vertices);
+    cout << "read_cache done! cache_map size is :" << cache_map->size() << endl;
+    tbb::tick_count tbbt0 = tbb::tick_count::now();
     struct timespec t1, t2, res;
     // clock_gettime(CLOCK_MONOTONIC, &t1);
     auto vtable = c.p.second.get();
