@@ -25,6 +25,10 @@
 #include <numa.h>//for numa_bind
 #include <numaif.h>
 
+char CACHE_FILE_PATH[] = "/home/ccy/data_set/MOLIERE_2016_FAM_GRAPH/bin_order.cache";
+#define USE_CACHE 0
+#define CACHE_RATIO 0
+
 namespace {
 void validate_params(boost::program_options::variables_map const &vm)
 {
@@ -141,9 +145,20 @@ void on_completion(struct ibv_wc *wc)
       if (ctx->vm->count("double-buffer")) {
         throw std::runtime_error("double buffering deprecated");
       } else {
+
+        if (USE_CACHE) {
+          BOOST_LOG_TRIVIAL(info) << "Cache ratio is " << CACHE_RATIO << endl;
+          CacheMap *cache_map =
+            BinReader::read_bin_cache(CACHE_FILE_PATH, CACHE_RATIO, total_verts);
+          BOOST_LOG_TRIVIAL(info)
+            << "read_cache done! cache_map size is :" << cache_map->size() << endl;
+          ctx->cacheMap = cache_map;
+        } else {
+          ctx->cacheMap = nullptr;
+        }
         if (ctx->kernel == "bfs") {
           ctx->app_thread = std::thread(
-            famgraph::run_kernel<bfs::bfs_kernel<famgraph::Buffering::SINGLE>>,
+            famgraph::run_kernel<bfs::<famgraph::Buffering::SINGLE>>,
             std::ref(*ctx));
         } else if (ctx->kernel == "pagerank_delta") {
           ctx->app_thread = std::thread(

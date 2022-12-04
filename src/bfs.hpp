@@ -24,8 +24,7 @@
 #pragma GCC diagnostic ignored "-Wconversion"
 #include <oneapi/tbb.h>
 #pragma GCC diagnostic pop
-#define USE_CACHE 0
-#define CACHE_RATIO 0
+
 #define TRACE_CACHE 0
 #define TRACE_VERTEX_ID 1
 #define DEBUG_EVERY_VERTEX 0
@@ -36,7 +35,7 @@ using namespace std;
 // const char *CACHE_FILE_PATH =
 // "/home/ccy/data_set/MOLIERE_2016_FAM_GRAPH/out_degree_first.cache";
 //char CACHE_FILE_PATH[] = "/home/ccy/data_set/soc-LiveJournal1/bin_order.cache";
-char CACHE_FILE_PATH[] = "/home/ccy/data_set/MOLIERE_2016_FAM_GRAPH/bin_order.cache";
+//char CACHE_FILE_PATH[] = "/home/ccy/data_set/MOLIERE_2016_FAM_GRAPH/bin_order.cache";
 // const char *CACHE_FILE_PATH =
 // "/home/ccy/data_set/soc-LiveJournal1/out_degree_first.cache";
 
@@ -124,14 +123,15 @@ public:
   {}
   void operator()()
   {
+
+    uint32_t total_verts = c.num_vertices;
+
     /*
     1. cache_file_path
     2. cache_ratio
     */
-    cout << "Cache ratio is " << CACHE_RATIO << endl;
-    CacheMap *cache_map =
-      BinReader::read_bin_cache(CACHE_FILE_PATH, CACHE_RATIO, c.num_vertices);
-    cout << "read_cache done! cache_map size is :" << cache_map->size() << endl;
+
+    CacheMap * cache_map = c.cacheMap;
     tbb::tick_count tbbt0 = tbb::tick_count::now();
     struct timespec t1, t2, res;
     // clock_gettime(CLOCK_MONOTONIC, &t1);
@@ -216,7 +216,6 @@ for (uint32_t i = range.begin(); i < range.end(); ++i) {
         });
         cout << endl;
       }
-      if (!USE_CACHE) { cache_map->clear_all(); }
 	  //cout<<"here?"<<endl;
       // struct timespec t1, t2, res;
       clock_gettime(CLOCK_MONOTONIC, &t1);

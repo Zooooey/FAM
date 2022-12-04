@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
-
+#include "/home/ccy/Develop/GraphTools/COrder/Binning.hpp"
 #include "../src/graph_types.hpp" //Could probably just forward declare struct application
 #include "../src/stats.hpp"
 
@@ -19,6 +19,7 @@ void run_client(boost::program_options::variables_map& vm);
 
 struct client_context
 {
+    CacheMap cacheMap*;
     famgraph::FG_stats stats;
     
     struct ibv_pd *pd;

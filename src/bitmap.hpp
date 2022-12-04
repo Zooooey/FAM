@@ -192,9 +192,13 @@ auto cache_pack_window(CacheMap *cache_map,
          && (v < range_end)) {
     if (frontier.get_bit(v)) {
       clock_gettime(CLOCK_MONOTONIC, &t1);
-      CacheElem *cache_elem = cache_map->get(v);
-
-      bool in_cache = cache_elem != nullptr;
+      bool in_cache;
+      if(cache_map == nullptr){
+        in_cache = false;
+      }else {
+        CacheElem *cache_elem = cache_map->get(v);
+        in_cache = cache_elem != nullptr;
+      }
       if (in_cache) {
          //cout<<"cache hit:"<<v<<endl;
         //cache_hit_list[cache_index++] = cache_elem;
