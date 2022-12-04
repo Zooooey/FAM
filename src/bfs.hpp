@@ -24,7 +24,6 @@
 #pragma GCC diagnostic ignored "-Wconversion"
 #include <oneapi/tbb.h>
 #pragma GCC diagnostic pop
-
 #define TRACE_CACHE 0
 #define TRACE_VERTEX_ID 1
 #define DEBUG_EVERY_VERTEX 0
@@ -138,7 +137,7 @@ public:
     auto vtable = c.p.second.get();
     auto *frontier = &c.frontierA;
     auto *next_frontier = &c.frontierB;
-    tbb::blocked_range<uint32_t> const my_range(0, total_verts);
+    tbb::blocked_range<uint32_t> const my_range(0,total_verts );
 
     //===========TRACE file to debug =============
     ofstream TRACE("trace.log", ios::out);
