@@ -33,7 +33,8 @@ int main(int argc, char *argv[])
       po::value<std::string>()->default_value("/home/username/graphs/kernel-out.txt"),
       "path to output file")("threads,t",
       po::value<unsigned long>()->default_value(0),
-      "Number of Worker threads. 0 for all available cores")(
+      "Number of Worker threads. 0 for all available cores")
+      ("cache_ratio,cr",po::value<double>()->default_value(0),"Ratio of cache, 0 for not using any cache!")(
       "print-table", "Print full vertex table after kernel")(
       "kcore-k", po::value<uint32_t>()->default_value(100), "The k in k-core")(
       "delta", po::value<uint32_t>()->default_value(25), "delta step divisor for MIS")(

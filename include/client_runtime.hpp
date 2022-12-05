@@ -20,6 +20,7 @@ void run_client(boost::program_options::variables_map& vm);
 struct client_context
 {
     CacheMap *cacheMap;
+    double cache_ratio;
     famgraph::FG_stats stats;
     
     struct ibv_pd *pd;
@@ -54,8 +55,8 @@ struct client_context
     uint64_t num_edges{0};
 
     client_context(std::string const& t_file, unsigned long const t_num_conns, std::string const& t_kernel,
-                   std::string const& t_ofile, bool const t_print_vtable, boost::program_options::variables_map * const t_vm)
-        :index_file(t_file), kernel(t_kernel), ofile(t_ofile), cm_ids(t_num_conns), connections(t_num_conns), print_vtable(t_print_vtable), vm(t_vm) {}
+                   std::string const& t_ofile, bool const t_print_vtable, boost::program_options::variables_map * const t_vm, double ca_ratio)
+        :index_file(t_file), kernel(t_kernel), ofile(t_ofile), cm_ids(t_num_conns), connections(t_num_conns), print_vtable(t_print_vtable), vm(t_vm), cache_ratio(ca_ratio) {}
 
     void finish_application();
     

@@ -147,10 +147,9 @@ void on_completion(struct ibv_wc *wc)
       } else {
 
         tbb::tick_count t0 = tbb::tick_count::now();
-        if (USE_CACHE) {
-          BOOST_LOG_TRIVIAL(info) << "Cache ratio is " << CACHE_RATIO << endl;
+        if(ctx->cache_ratio != 0){
           CacheMap *cache_map =
-            BinReader::read_bin_cache(CACHE_FILE_PATH, CACHE_RATIO, ctx->app->num_vertices);
+            BinReader::read_bin_cache(CACHE_FILE_PATH, ctx->cache_ratio, ctx->app->num_vertices);
           BOOST_LOG_TRIVIAL(info)
             << "read_cache done! cache_map size is :" << cache_map->size() << endl;
           ctx->cacheMap = cache_map;
@@ -264,6 +263,7 @@ void run_client(boost::program_options::variables_map &vm)
   std::string kernel = vm["kernel"].as<std::string>();
   std::string ofile = vm["ofile"].as<std::string>();
   auto const threads = vm["threads"].as<unsigned long>();
+  double cache_ratio = vm["cache_ratio"].as<double>();
   unsigned long const max_cores =
     static_cast<unsigned long>(std::thread::hardware_concurrency());
   auto const num_connections = threads == 0 || threads > max_cores ? max_cores : threads;
@@ -276,10 +276,11 @@ void run_client(boost::program_options::variables_map &vm)
   BOOST_LOG_TRIVIAL(info) << "Server IPoIB address: " << server_ip
                           << " port: " << server_port;
   BOOST_LOG_TRIVIAL(info) << "Index File: " << ifile;
+  BOOST_LOG_TRIVIAL(info) << "Cache Ratio: " << cache_ratio;
 
   struct client_context ctx
   {
-    ifile, num_connections, kernel, ofile, print_vtable, &vm
+    ifile, num_connections, kernel, ofile, print_vtable, &vm, 
   };
   rc_init(on_pre_conn,
     NULL,// on connect
