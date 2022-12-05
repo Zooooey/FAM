@@ -56,6 +56,8 @@ public:
     auto *frontier = &c.frontierA;
     auto *next_frontier = &c.frontierB;
 
+    CacheMap * cache_map = c.context->cacheMap;
+
     tbb::blocked_range<uint32_t> const my_range(0, total_verts);
     uint32_t start = 0;
     uint32_t end = 0;
@@ -117,7 +119,7 @@ public:
     while (undecided > 0) {
       if (front_size > 0) {// all undecided
         tbb::blocked_range<uint32_t> const f_range(0, end);
-        famgraph::single_buffer::for_each_active_batch(
+        famgraph::single_buffer::ccy_for_each_active_batch(cache_map,
           *frontier, f_range, c, pull);
       }
       assert(front_size <= delta);
