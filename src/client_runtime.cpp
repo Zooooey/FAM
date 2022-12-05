@@ -280,7 +280,7 @@ void run_client(boost::program_options::variables_map &vm)
 
   struct client_context ctx
   {
-    ifile, num_connections, kernel, ofile, print_vtable, &vm, 
+    ifile, num_connections, kernel, ofile, print_vtable, &vm, cache_ratio
   };
   rc_init(on_pre_conn,
     NULL,// on connect
