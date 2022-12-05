@@ -66,7 +66,7 @@ template<class KERNEL> void run_kernel(struct client_context &ctx)
   tbb::tick_count t0 = tbb::tick_count::now();
   kernel();
   tbb::tick_count t1 = tbb::tick_count::now();
-  BOOST_LOG_TRIVIAL(info) << "Running Time(s): " << (t1 - t0).seconds();
+  BOOST_LOG_TRIVIAL(info) << "Algorithm Running Time(s): " << (t1 - t0).seconds();
   kernel.print_result();
   ctx.finish_application();
 }

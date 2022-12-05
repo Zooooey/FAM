@@ -146,6 +146,9 @@ void on_completion(struct ibv_wc *wc)
         throw std::runtime_error("double buffering deprecated");
       } else {
 
+          tbb::tick_count t0 = tbb::tick_count::now();
+
+  
         if (USE_CACHE) {
           BOOST_LOG_TRIVIAL(info) << "Cache ratio is " << CACHE_RATIO << endl;
           CacheMap *cache_map =
@@ -182,6 +185,8 @@ void on_completion(struct ibv_wc *wc)
           BOOST_LOG_TRIVIAL(fatal) << "Unrecognized Kernel";
           throw std::runtime_error("Unrecognized Kernel");
         }
+        tbb::tick_count t1 = tbb::tick_count::now();
+        BOOST_LOG_TRIVIAL(info) << "Running Time(s): " << (t1 - t0).seconds();
       }
     } else if (ctx->rx_msg->id == MSG_READY) {// client never receives this
       BOOST_LOG_TRIVIAL(trace) << "received READY";
