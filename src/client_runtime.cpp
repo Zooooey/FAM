@@ -146,8 +146,11 @@ void on_completion(struct ibv_wc *wc)
 
         tbb::tick_count t0 = tbb::tick_count::now();
         if(ctx->cache_ratio != 0){
+          if(!ctx->vm->count("cache_file_path")){
+            throw std::runtime_error("Not providing cache file path!");
+          }
           CacheMap *cache_map =
-            BinReader::read_bin_cache(CACHE_FILE_PATH, ctx->cache_ratio, ctx->app->num_vertices);
+            BinReader::read_bin_cache(ctx->vm["cache_file_path"].as<std::string>.c_str(), ctx->cache_ratio, ctx->app->num_vertices);
           BOOST_LOG_TRIVIAL(info)
             << "read_cache done! cache_map size is :" << cache_map->size() << endl;
           ctx->cacheMap = cache_map;
