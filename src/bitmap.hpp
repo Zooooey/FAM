@@ -32,7 +32,6 @@
 #include "vertex_table.hpp"//move later
 #include <connection_utils.hpp>//move later
 #include "communication_runtime.hpp"
-#include "Cache.hpp"
 #include "Common.hpp"
 #include <boost/log/trivial.hpp>//remove later
 
@@ -193,10 +192,11 @@ auto cache_pack_window(CacheMap *cache_map,
     if (frontier.get_bit(v)) {
       clock_gettime(CLOCK_MONOTONIC, &t1);
       bool in_cache;
+	  CacheElem * cache_elem;
       if(cache_map == nullptr){
         in_cache = false;
       }else {
-        CacheElem *cache_elem = cache_map->get(v);
+        cache_elem = cache_map->get(v);
         in_cache = cache_elem != nullptr;
       }
       if (in_cache) {

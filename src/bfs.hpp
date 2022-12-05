@@ -130,7 +130,8 @@ public:
     2. cache_ratio
     */
 
-    CacheMap * cache_map = c.cacheMap;
+    CacheMap * cache_map = c.context->cacheMap;
+
     tbb::tick_count tbbt0 = tbb::tick_count::now();
     struct timespec t1, t2, res;
     // clock_gettime(CLOCK_MONOTONIC, &t1);
@@ -144,11 +145,6 @@ public:
     if (!TRACE.good()) { cout << "open file trace.log failed!" << endl; }
     //===========================================
 
-    if (USE_CACHE) {
-      cout << "Using CACHE to run FAM" << endl;
-    } else {
-      cout << "no CAHCE for FAM" << endl;
-    }
     BOOST_LOG_TRIVIAL(info) << "bfs start vertex: " << start_v;
     cout << "start vertex: " << start_v << endl;
     frontier->clear();

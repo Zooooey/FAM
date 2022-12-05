@@ -19,7 +19,7 @@ void run_client(boost::program_options::variables_map& vm);
 
 struct client_context
 {
-    CacheMap cacheMap*;
+    CacheMap *cacheMap;
     famgraph::FG_stats stats;
     
     struct ibv_pd *pd;
