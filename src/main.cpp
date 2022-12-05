@@ -34,7 +34,9 @@ int main(int argc, char *argv[])
       "path to output file")("threads,t",
       po::value<unsigned long>()->default_value(0),
       "Number of Worker threads. 0 for all available cores")
-      ("cache_ratio,cr",po::value<double>()->default_value(0),"Ratio of cache, 0 for not using any cache!")(
+      ("cache_ratio,c",po::value<double>()->default_value(0),"Ratio of cache, 0 for not using any cache!")
+      ("cache_file_path,f",po::value<std::string>(), "path to cache file")
+      (
       "print-table", "Print full vertex table after kernel")(
       "kcore-k", po::value<uint32_t>()->default_value(100), "The k in k-core")(
       "delta", po::value<uint32_t>()->default_value(25), "delta step divisor for MIS")(
@@ -65,6 +67,10 @@ int main(int argc, char *argv[])
         && (!(vm["mode"].as<std::string>() == "client"
               || vm["mode"].as<std::string>() == "server"))) {
       throw po::validation_error(po::validation_error::invalid_option_value, "mode");
+    }
+
+    if (vm.count("cache_ratio") && !vm.count("cache_file_path")){
+      throw po::validation_error(po::validation_error::invalid_option_value, "cache_file_path");
     }
 
     if (vm["mode"].as<std::string>() == "client") {

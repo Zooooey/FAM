@@ -26,8 +26,6 @@
 #include <numaif.h>
 
 char CACHE_FILE_PATH[] = "/home/ccy/data_set/MOLIERE_2016_FAM_GRAPH/bin_order.cache";
-#define USE_CACHE 0
-#define CACHE_RATIO 0
 
 namespace {
 void validate_params(boost::program_options::variables_map const &vm)
