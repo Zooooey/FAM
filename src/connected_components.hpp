@@ -77,6 +77,7 @@ public:
 
   void operator()()
   {
+    CacheMap * cache_map = c.context->cacheMap;
     auto const total_verts = c.num_vertices;
     auto vtable = c.p.second.get();
     auto *frontier = &c.frontierA;
@@ -103,7 +104,7 @@ public:
 
     frontier->set_all();
     while (!frontier->is_empty()) {
-      famgraph::single_buffer::for_each_active_batch(
+      famgraph::single_buffer::ccy_for_each_active_batch(cache_map,
         *frontier, my_range, c, CC_push);
       frontier->clear();
       std::swap(frontier, next_frontier);
