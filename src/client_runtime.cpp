@@ -24,6 +24,7 @@
 
 #include <numa.h>//for numa_bind
 #include <numaif.h>
+#include <string.h>
 
 char CACHE_FILE_PATH[] = "/home/ccy/data_set/MOLIERE_2016_FAM_GRAPH/bin_order.cache";
 
@@ -59,8 +60,12 @@ void send_message(struct rdma_cm_id *id)
   sge.addr = reinterpret_cast<uintptr_t>(ctx->tx_msg);
   sge.length = sizeof(*ctx->tx_msg);
   sge.lkey = ctx->tx_msg_mr->lkey;
-
-  TEST_NZ(ibv_post_send(id->qp, &wr, &bad_wr));
+  int ret = ibv_post_send(id->qp, &wr, &bad_wr);
+  if(ret!=0){
+		printf("Error ibv_post_send: %s\n", strerror(errno));
+	}
+  
+  TEST_NZ(ret);
 }
 
 void post_receive(struct rdma_cm_id *id)
@@ -78,8 +83,11 @@ void post_receive(struct rdma_cm_id *id)
   sge.addr = reinterpret_cast<uintptr_t>(ctx->rx_msg);
   sge.length = sizeof(*ctx->rx_msg);
   sge.lkey = ctx->rx_msg_mr->lkey;
-
-  TEST_NZ(ibv_post_recv(id->qp, &wr, &bad_wr));
+  int ret = ibv_post_recv(id->qp, &wr, &bad_wr);
+  if(ret!=0){
+		printf("Error ibv_post_recv: %s\n", strerror(errno));
+	}
+  TEST_NZ(ret);
 }
 
 void on_pre_conn(struct rdma_cm_id *id)
@@ -150,7 +158,7 @@ void on_completion(struct ibv_wc *wc)
             throw std::runtime_error("Not providing cache file path!");
           }
           CacheMap *cache_map =
-            BinReader::read_bin_cache(ctx->vm["cache_file_path"].as<std::string>.c_str(), ctx->cache_ratio, ctx->app->num_vertices);
+            BinReader::read_bin_cache(ctx->vm->operator[]("cache_file_path").as<std::string>().c_str(), ctx->cache_ratio, ctx->app->num_vertices);
           BOOST_LOG_TRIVIAL(info)
             << "read_cache done! cache_map size is :" << cache_map->size() << endl;
           ctx->cacheMap = cache_map;
