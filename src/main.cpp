@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
       throw po::validation_error(po::validation_error::invalid_option_value, "mode");
     }
 
-    if (vm.["cache_ratio"].as<double>()>0.000001 && !vm.count("cache_file_path")){
+    if (vm["cache_ratio"].as<double>()>0.000001 && !vm.count("cache_file_path")){
       throw po::validation_error(po::validation_error::invalid_option_value, "cache_file_path");
     }
 
