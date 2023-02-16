@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "mmio.h": "c"
+        "mmio.h": "c",
+        "thread": "cpp"
     }
 }
