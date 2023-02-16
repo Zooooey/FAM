@@ -438,7 +438,11 @@ namespace single_buffer {
         struct ibv_send_wr &wr = my_window[0];
 
         if (wrs > 0) {
-          TEST_NZ(ibv_post_send((ctx->cm_ids)[worker_id]->qp, &wr, &bad_wr));
+          int ret = ibv_post_send((ctx->cm_ids)[worker_id]->qp, &wr, &bad_wr);
+	      if(ret!=0){
+			printf("ibv_post_send after pack window:%s\n",strerror(errno));
+		  }
+          TEST_NZ(ret);
           uint32_t volatile *e_buf = edge_buf;
           for (uint32_t i = 0; i < wrs; ++i) {
             //这个应该是一个点的范围，遍历这个点的范围，还要根据点获取边列表。
@@ -540,7 +544,17 @@ namespace single_buffer {
         struct ibv_send_wr &wr = my_window[0];
 
         if (wrs > 0) {
-          TEST_NZ(ibv_post_send((ctx->cm_ids)[worker_id]->qp, &wr, &bad_wr));
+          int ret = ibv_post_send((ctx->cm_ids)[worker_id]->qp, &wr, &bad_wr);
+          while(ret == ENOMEM){
+            ret = ibv_post_send((ctx->cm_ids)[worker_id]->qp, &wr, &bad_wr);
+          }
+          /*if(ret == ENOMEM){
+			printf("ibv_post_send Send Queue is full or not enough resources to complete this operation\n");
+		  }*/
+          if(ret !=0 ){
+			printf("ibv_post_send ret:%d errno:%d after cache_pack_window:%s\n",ret,errno,strerror(errno));
+		  }
+          TEST_NZ(ret);
           // While we waiting the RDMA result, we can process cache vertex.
           /*for (uint32_t i = 0; i < cache_size; i++) {
             if (cache_hit_list[i] != nullptr) {
@@ -665,7 +679,11 @@ namespace single_buffer {
         struct ibv_send_wr *bad_wr = NULL;
         struct ibv_send_wr &wr = my_window[0];
         if (batch_size > 0) {
-          TEST_NZ(ibv_post_send((ctx->cm_ids)[worker_id]->qp, &wr, &bad_wr));
+          int ret = ibv_post_send((ctx->cm_ids)[worker_id]->qp, &wr, &bad_wr);
+		  if(ret!=0){
+				printf("ibv_post_send error after pack_window2:%s\n", strerror(errno));
+			}
+          TEST_NZ(ret);
           uint32_t volatile *e_buf = edge_buf;
           for (uint32_t i = 0; i < wrs; ++i) {
             for (uint32_t v = vertex_batch[i].v_s; v <= vertex_batch[i].v_e; v++) {

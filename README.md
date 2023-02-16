@@ -1,3 +1,11 @@
+# Additional Features by CCY
+We add another two parameters:
+-f /path/to/bin_cache_file
+-c cache_ratio e.g. 0.5
+
+An example to run client:
+/home/ccy/Develop/FAM/build/src/main -m client -i /home/ccy/data_set/twitter7/twitter7_FAM_GRAPH/twitter7_FAM_GRAPH_twitter7_edge_list.idx -t 10 -a 10.0.0.44 -p 12345 -f /home/ccy/data_set/twitter7/twitter7_FAM_GRAPH/bin_order.cache -k MIS -c 0.57
+
 # FAM-Graph
 
 FAM-Graph is a semi-external graph processing system designed for the disaggregated FAM (Fabric Attached Memory) architecture.

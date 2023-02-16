@@ -36,7 +36,7 @@ target_link_libraries(FAMGraph PRIVATE
   numa)
 
 target_compile_definitions(FAMGraph PRIVATE BOOST_LOG_DYN_LINK)
-
+add_compile_options(-g -O2 -fno-omit-frame-pointer)
 add_executable(main main.cpp)
 target_link_libraries(main PRIVATE
   project_options
