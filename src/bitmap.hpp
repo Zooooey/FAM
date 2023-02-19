@@ -204,7 +204,7 @@ auto cache_pack_window(CacheMap *cache_map,
         //cache_hit_list[cache_index++] = cache_elem;
         //cache_hit_list[cache_index++] = nullptr;
         // This vertex is in cache, NEXT ONE!!
-        function(cache_elem->get_vertex_id(), cache_elem->get_neighbors(), cache_elem->get_out_degree());
+        function(cache_elem->getId(), cache_elem->get_neighbors(), cache_elem->get_out_degree());
         ctx->stats.cache_hit.local() += 1;
         v++;
         clock_gettime(CLOCK_MONOTONIC, &t2);
@@ -478,7 +478,7 @@ namespace single_buffer {
     for (auto it = cache_hit_list.begin(); it != cache_hit_list.end(); it++) {
       CacheElem *elem = *it;
       uint32_t out_num = static_cast<uint32_t>(elem->get_out_degree());
-      function(elem->get_vertex_id(),
+      function(elem->getId(),
         const_cast<uint32_t *const>(elem->get_neighbors()),
         out_num);
     }
