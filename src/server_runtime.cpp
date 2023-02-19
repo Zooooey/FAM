@@ -99,19 +99,19 @@ public:
   }
 };
 
-auto get_edge_list(std::string file, ibv_pd *pd, bool use_HP)
+auto get_edge_list(std::string adj_file, ibv_pd *pd, bool use_HP)
 {
   namespace fs = boost::filesystem;
 
-  fs::path p(file);
+  fs::path p(adj_file);
   if (!(fs::exists(p) && fs::is_regular_file(p)))
     throw std::runtime_error(".adj file not found");
 
-  auto const edges = num_elements<uint32_t>(p);
-  auto ptr = famgraph::RDMA_mmap_unique<uint32_t>(edges, pd, use_HP);
+  auto const edges_count = num_elements<uint32_t>(p);
+  auto ptr = famgraph::RDMA_mmap_unique<uint32_t>(edges_count, pd, use_HP);
   auto array = reinterpret_cast<char*>(ptr.get());
-  auto const filesize = edges * sizeof(uint32_t);
-  file_mapper get_mapped_chunk{file, filesize};
+  auto const filesize = edges_count * sizeof(uint32_t);
+  file_mapper get_mapped_chunk{adj_file, filesize};
 
   while (get_mapped_chunk.has_next()){
     auto const [fptr, len] = get_mapped_chunk();
@@ -121,7 +121,7 @@ auto get_edge_list(std::string file, ibv_pd *pd, bool use_HP)
   }
   
   auto mr = ptr.get_deleter().mr;
-  return std::make_tuple(std::move(ptr), mr, edges);
+  return std::make_tuple(std::move(ptr), mr, edges_count);
 }
 
 void send_message(struct rdma_cm_id *id)
@@ -191,6 +191,7 @@ void on_pre_conn(struct rdma_cm_id *id)
   post_receive(id);
 }
 
+//ONLY server need on_connection() callback, client side use a NULL as on_connection callback instead.
 void on_connection(struct rdma_cm_id *id)
 {
   BOOST_LOG_TRIVIAL(debug) << "on connection";

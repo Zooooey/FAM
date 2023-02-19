@@ -26,10 +26,11 @@ struct RDMA_mmap_deleter
     munmap(ptr, m_size);
   }
 };
-
+ 
 template<typename T> auto RDMA_mmap_unique(uint64_t array_size, ibv_pd *pd, bool use_HP)
 {
-  auto constexpr HP_align = 1 << 30;// 1 GB huge pages
+  // auto constexpr HP_align = 1 << 30;// 1 GB huge pages
+  auto constexpr HP_align = 1 << 21;// 2 MB huge pages
   auto const HP_FLAGS = use_HP ? MAP_HUGETLB : 0;
   auto const req_size = sizeof(T) * array_size;
   auto const aligned_size =
@@ -39,7 +40,7 @@ template<typename T> auto RDMA_mmap_unique(uint64_t array_size, ibv_pd *pd, bool
   if (auto ptr = mmap(0, aligned_size, PROT_RW, MAP_ALLOC | HP_FLAGS, -1, 0)) {
     struct ibv_mr *mr = ibv_reg_mr(pd, ptr, aligned_size, IB_FLAGS);
     if (!mr) {
-      BOOST_LOG_TRIVIAL(fatal) << "ibv_reg_mr failed";
+      BOOST_LOG_TRIVIAL(fatal) << "ibv_reg_mr failed" <<"strerror(errno):"<<strerror(errno);
       throw std::runtime_error("ibv_reg_mr failed");
     }
 
@@ -62,7 +63,8 @@ public:
 
 template<typename T> auto mmap_unique(uint64_t const array_size, bool const use_HP)
 {
-  auto constexpr HP_align = 1 << 30;// 1 GB huge pages
+  // auto constexpr HP_align = 1 << 30;// 1 GB huge pages
+  auto constexpr HP_align = 1 << 21;// 2 MB huge pages
   auto const HP_FLAGS = use_HP ? MAP_HUGETLB : 0;
   auto const req_size = sizeof(T) * array_size;
   auto const aligned_size =

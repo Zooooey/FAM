@@ -27,7 +27,7 @@ uint32_t get_num_edges(uint32_t const v,
 uint32_t get_max_out_degree(famgraph::vertex *const vtable,
   uint32_t const n_vert,
   uint64_t const n_edges) noexcept;
-
+//返回一个CSR结构的数组，数组下标是vertex_id，内容是其CSR idx。例如vertex_table[0]=0,vertex_table[1]=2，说明vertex_id=0的点有2条边
 template<typename V>
 auto get_vertex_table(std::string const &file,
   uint64_t const num_vertices,

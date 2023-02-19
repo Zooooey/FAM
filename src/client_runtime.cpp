@@ -171,7 +171,7 @@ void on_completion(struct ibv_wc *wc)
         BOOST_LOG_TRIVIAL(info) << "Reading Bin Cache Time(s): " << temp_str <<endl ;
         if (ctx->kernel == "bfs") {
           ctx->app_thread = std::thread(
-            famgraph::<bfs::bfs_kernel<famgraph::Buffering::SINGLE>>,
+            famgraph::run_kernel<bfs::bfs_kernel<famgraph::Buffering::SINGLE>>,
             std::ref(*ctx));
         } else if (ctx->kernel == "pagerank_delta") {
           ctx->app_thread = std::thread(

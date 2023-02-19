@@ -148,6 +148,7 @@ std::string cm_event_to_string(rdma_cm_event_type e)
 }
 }// namespace
 
+//An event_loop both being used in server and client
 void event_loop(struct rdma_event_channel *ec, int exit_on_disconnect)
 {
   struct rdma_cm_event *event = NULL;

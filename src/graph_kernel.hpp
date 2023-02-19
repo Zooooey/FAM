@@ -40,21 +40,15 @@ template<typename V> struct Generic_ctx
       max_out_degree{
         famgraph::get_max_out_degree(p.first.get(), num_vertices, num_edges)
       },
+      //edgewindow的默认值是1.
       edge_buf_size{ (*ctx.vm)["edgewindow"].as<uint32_t>() * max_out_degree },
       RDMA_window{ famgraph::RDMA_mmap_unique<uint32_t>(
-        edge_buf_size * num_workers * static_cast<uint32_t>(b),
+        edge_buf_size * num_workers * static_cast<uint32_t>(b),//b is the Buffering type, which is a enum, value is 1 or 2.
         ctx.pd,
         ctx.vm->count("HP")) },
       frontierA{ num_vertices }, frontierB{ num_vertices }
   {
     ctx.heap_mr = this->RDMA_window.get_deleter().mr;
-    // bool const use_HP = ctx.vm->count("hp") ? true : false;
-    // this->index = std::move(p.first);
-    // this->vertex_table = std::move(p.second);
-    // auto const window_factor = (*ctx.vm)["edgewindow"].as<uint32_t>();
-    // auto const edge_buf_size = max_out_degree * window_factor;
-    // this->RDMA_window = famgraph::RDMA_mmap_unique<uint32_t>(this->edge_buf_size *
-    // num_workers * static_cast<uint32_t>(b), &ctx); //TODO: convert to ref
   }
 };
 
