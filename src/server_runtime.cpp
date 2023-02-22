@@ -87,12 +87,20 @@ public:
   auto operator()()
   {
     auto length = std::min(this->chunk_size, this->filesize - this->offset);
+    if(this->use_HP){
+        auto constexpr HP_align = 1 << 21;// 2 MB huge pages
+        length = boost::alignment::align_up(length, HP_align);
+    }
     auto del = [length](void *p) {
       auto r = munmap(p, length);
       if (r) BOOST_LOG_TRIVIAL(fatal) << "munmap chunk failed";
     };
-
-    auto flags = use_HP? MAP_PRIVATE | MAP_POPULATE | MAP_HUGETLB : MAP_PRIVATE | MAP_POPULATE;
+    
+    auto flags = MAP_PRIVATE | MAP_POPULATE;
+    if(this->use_HP){
+        flags = flags | MAP_HUGETLB;
+        auto constexpr HP_align = 1 << 21;// 2 MB huge pages
+    }
     auto ptr = mmap(0, length, PROT_READ, flags, this->fd, static_cast<long>(this->offset));
     this->offset += length;
 
