@@ -92,7 +92,7 @@ public:
       if (r) BOOST_LOG_TRIVIAL(fatal) << "munmap chunk failed";
     };
 
-    auto constexpr flags = use_HP? MAP_PRIVATE | MAP_POPULATE | MAP_HUGETLB : MAP_PRIVATE | MAP_POPULATE;
+    auto flags = use_HP? MAP_PRIVATE | MAP_POPULATE | MAP_HUGETLB : MAP_PRIVATE | MAP_POPULATE;
     auto ptr = mmap(0, length, PROT_READ, flags, this->fd, static_cast<long>(this->offset));
     this->offset += length;
 
