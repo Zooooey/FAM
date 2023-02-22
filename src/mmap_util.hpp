@@ -38,6 +38,7 @@ template<typename T> auto RDMA_mmap_unique(uint64_t array_size, ibv_pd *pd, bool
 
   BOOST_LOG_TRIVIAL(debug) << "aligned size: " << aligned_size << " use_HP: " << use_HP;
   if (auto ptr = mmap(0, aligned_size, PROT_RW, MAP_ALLOC | HP_FLAGS, -1, 0)) {
+    int access = use_HP? IB_FLAGS | IBV_ACCESS_HUGETLB : IB_FLAGS;
     struct ibv_mr *mr = ibv_reg_mr(pd, ptr, aligned_size, IB_FLAGS);
     if (!mr) {
       BOOST_LOG_TRIVIAL(fatal) << "ibv_reg_mr failed" <<"strerror(errno):"<<strerror(errno);

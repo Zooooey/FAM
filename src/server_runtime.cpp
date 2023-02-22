@@ -68,10 +68,11 @@ class file_mapper
   uint64_t offset{ 0 };
   uint64_t filesize;
   int fd;
+  bool use_HP;
 
 public:
-  file_mapper(std::string const &file, uint64_t t_fsize)
-    : filesize{ t_fsize }, fd{ open(file.c_str(), O_RDONLY) }
+  file_mapper(std::string const &file, uint64_t t_fsize, bool huge_page)
+    : filesize{ t_fsize }, fd{ open(file.c_str(), O_RDONLY) }, use_HP{ huge_page }
   {
     if (this->fd == -1) { throw std::runtime_error("open() failed on .adj file"); }
   }
@@ -91,7 +92,7 @@ public:
       if (r) BOOST_LOG_TRIVIAL(fatal) << "munmap chunk failed";
     };
 
-    auto constexpr flags = MAP_PRIVATE | MAP_POPULATE;
+    auto constexpr flags = use_HP? MAP_PRIVATE | MAP_POPULATE | MAP_HUGETLB : MAP_PRIVATE | MAP_POPULATE;
     auto ptr = mmap(0, length, PROT_READ, flags, this->fd, static_cast<long>(this->offset));
     this->offset += length;
 
@@ -111,7 +112,7 @@ auto get_edge_list(std::string adj_file, ibv_pd *pd, bool use_HP)
   auto ptr = famgraph::RDMA_mmap_unique<uint32_t>(edges_count, pd, use_HP);
   auto array = reinterpret_cast<char*>(ptr.get());
   auto const filesize = edges_count * sizeof(uint32_t);
-  file_mapper get_mapped_chunk{adj_file, filesize};
+  file_mapper get_mapped_chunk{adj_file, filesize, use_HP};
 
   while (get_mapped_chunk.has_next()){
     auto const [fptr, len] = get_mapped_chunk();

@@ -49,6 +49,8 @@ template<typename V> struct Generic_ctx
       frontierA{ num_vertices }, frontierB{ num_vertices }
   {
     ctx.heap_mr = this->RDMA_window.get_deleter().mr;
+    BOOST_LOG_TRIVIAL(info) << "edge_buf_size(bytes): " << edge_buf_size;
+    BOOST_LOG_TRIVIAL(info) << "RDMA_window(edge_buf_size*threads*buffering_type)(bytes): " << edge_buf_size * num_workers * static_cast<uint32_t>(b);
   }
 };
 
