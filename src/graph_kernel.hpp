@@ -49,7 +49,7 @@ template<typename V> struct Generic_ctx
         famgraph::RDMA_mmap_unique<uint32_t>(
         edge_buf_size * num_workers * static_cast<uint32_t>(b),//b is the Buffering type, which is a enum, value is 1 or 2.
         ctx.pd,
-        ctx.vm->count("HP")，
+        ctx.vm->count("HP"),
         (*ctx.vm)["madvise_thp"].as<uint32_t>())
       },
       frontierA{ 
