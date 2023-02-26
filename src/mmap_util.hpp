@@ -44,6 +44,8 @@ template<typename T> auto RDMA_mmap_unique(uint64_t array_size, ibv_pd *pd, bool
     //madvice for THP 
     fam_thp::advice_edge_thp(ptr, aligned_size, fam_thp_flag);
 
+    //int access = use_HP? IB_FLAGS | IBV_ACCESS_HUGETLB : IB_FLAGS;
+    //FIXME: We are currently testing THP, so RDMA always turn on HUGETLB optimization.
     int access = use_HP? IB_FLAGS | IBV_ACCESS_HUGETLB : IB_FLAGS;
     struct ibv_mr *mr = ibv_reg_mr(pd, ptr, aligned_size, access);
     if (!mr) {
