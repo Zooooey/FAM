@@ -64,10 +64,10 @@ public:
   auto const HP_FLAGS = use_HP ? MAP_HUGETLB : 0;
   auto const aligned_size =
     use_HP ? boost::alignment::align_up(size, HP_align) : size;
-    auto ptr = mmap(0, aligned_size, PROT_RW, MAP_ALLOC | HP_FLAGS, -1, 0)
-    fam_common::advice_prop_thp(ptr, aligned_size, fam_thp_flag);
+    auto ptr = mmap(0, aligned_size, PROT_RW, MAP_ALLOC | HP_FLAGS, -1, 0);
+    fam_thp::advice_prop_thp(ptr, aligned_size, fam_thp_flag);
     //data = new unsigned long[WORD_OFFSET(size) + 1];
-    data = ptr;
+    data = static_cast<long unsigned int*>(ptr);
   }
 
   ~Bitmap() { delete[] data; }
