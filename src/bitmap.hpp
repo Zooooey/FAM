@@ -55,6 +55,7 @@ public:
   unsigned long *data;
   std::atomic<uint32_t> collide_count{ 0 };
   std::atomic<uint32_t> no_collide_count{ 0 };
+  uint64_t mmap_length;
 
 //TODO: change this constructor usage
   Bitmap(uint32_t const t_size, bool use_HP, int fam_thp_flag) : size{ t_size }, my_range(0, WORD_OFFSET(size) + 1)
@@ -64,13 +65,14 @@ public:
   auto const HP_FLAGS = use_HP ? MAP_HUGETLB : 0;
   auto const aligned_size =
     use_HP ? boost::alignment::align_up(size, HP_align) : size;
+    mmap_length = aligned_size;
     auto ptr = mmap(0, aligned_size, PROT_RW, MAP_ALLOC | HP_FLAGS, -1, 0)
     fam_common::advice_prop_thp(ptr, aligned_size, fam_thp_flag);
     //data = new unsigned long[WORD_OFFSET(size) + 1];
     data = ptr;
   }
 
-  ~Bitmap() { delete[] data; }
+  ~Bitmap() {  munmap(data, mmap_length); }
 
   void clear() noexcept
   {
