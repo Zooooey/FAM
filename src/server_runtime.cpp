@@ -18,6 +18,7 @@
 #include "mmap_util.hpp"
 #include "connection_utils.hpp"
 #include "messages.hpp"
+#include "fam_common.hpp"
 
 namespace {
 struct conn_context *g_ctx = 0;
@@ -47,6 +48,8 @@ struct conn_context// consider renaming server context
   struct ibv_mr *rx_msg_mr;
 
   bool use_hp{ false };
+
+  int fam_thp_flag{ 0 };
 
   conn_context(std::string const &file) : adj_filename{ file } {}
 
@@ -102,13 +105,16 @@ public:
         auto constexpr HP_align = 1 << 21;// 2 MB huge pages
     }
     auto ptr = mmap(0, length, PROT_READ, flags, this->fd, static_cast<long>(this->offset));
+    if(!ptr){
+      BOOST_LOG_TRIVIAL(fatal) << "munmap chunk failed";
+    }
     this->offset += length;
 
     return make_pair(std::unique_ptr<void, decltype(del)>(ptr, del), length);
   }
 };
 
-auto get_edge_list(std::string adj_file, ibv_pd *pd, bool use_HP)
+auto get_edge_list(std::string adj_file, ibv_pd *pd, bool use_HP, FAM_THP_FLAG fam_thp_flag)
 {
   namespace fs = boost::filesystem;
 
@@ -117,7 +123,7 @@ auto get_edge_list(std::string adj_file, ibv_pd *pd, bool use_HP)
     throw std::runtime_error(".adj file not found");
 
   auto const edges_count = num_elements<uint32_t>(p);
-  auto ptr = famgraph::RDMA_mmap_unique<uint32_t>(edges_count, pd, use_HP);
+  auto ptr = famgraph::RDMA_mmap_unique<uint32_t>(edges_count, pd, use_HP, fam_thp_flag);
   auto array = reinterpret_cast<char*>(ptr.get());
   auto const filesize = edges_count * sizeof(uint32_t);
   file_mapper get_mapped_chunk{adj_file, filesize, use_HP};
@@ -206,7 +212,7 @@ void on_connection(struct rdma_cm_id *id)
   BOOST_LOG_TRIVIAL(debug) << "on connection";
   struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
 
-  auto [ptr, mr, edges] = get_edge_list(ctx->adj_filename, rc_get_pd(), ctx->use_hp);
+  auto [ptr, mr, edges] = get_edge_list(ctx->adj_filename, rc_get_pd(), ctx->use_hp, ctx->fam_thp_flag);
   ctx->v.emplace_back(std::move(ptr));
   
   ctx->tx_msg->id = MSG_MR;
@@ -270,6 +276,7 @@ void run_server(boost::program_options::variables_map const &vm)
   struct conn_context ctx{file};
   //判断有没有在参数里指定使用大页
   ctx.use_hp = vm.count("hp") ? true : false;
+  ctx.fam_thp_flag = vm["madvise_thp"].as<uint32_t>();
   BOOST_LOG_TRIVIAL(info) << "hugepages? " << ctx.use_hp;
   g_ctx = &ctx;
 

@@ -7,6 +7,7 @@
 #include <memory>
 #include <stdexcept>
 #include <boost/align/align_up.hpp>
+#include "fam_common.hpp"
 
 namespace famgraph {
 constexpr auto PROT_RW = PROT_READ | PROT_WRITE;
@@ -27,7 +28,9 @@ struct RDMA_mmap_deleter
   }
 };
  
-template<typename T> auto RDMA_mmap_unique(uint64_t array_size, ibv_pd *pd, bool use_HP)
+ //TODO: change usage of this function
+//Store Edge Array
+template<typename T> auto RDMA_mmap_unique(uint64_t array_size, ibv_pd *pd, bool use_HP, FAM_THP_FLAG fam_thp_flag)
 {
   // auto constexpr HP_align = 1 << 30;// 1 GB huge pages
   auto constexpr HP_align = 1 << 21;// 2 MB huge pages
@@ -38,6 +41,9 @@ template<typename T> auto RDMA_mmap_unique(uint64_t array_size, ibv_pd *pd, bool
 
   BOOST_LOG_TRIVIAL(debug) << "aligned size: " << aligned_size << " use_HP: " << use_HP;
   if (auto ptr = mmap(0, aligned_size, PROT_RW, MAP_ALLOC | HP_FLAGS, -1, 0)) {
+    //madvice for THP 
+    fam_thp::advice_edge_thp(ptr, aligned_size, fam_thp_flag);
+
     int access = use_HP? IB_FLAGS | IBV_ACCESS_HUGETLB : IB_FLAGS;
     struct ibv_mr *mr = ibv_reg_mr(pd, ptr, aligned_size, access);
     if (!mr) {
@@ -61,8 +67,9 @@ public:
 
   void operator()(void *ptr) const { munmap(ptr, m_size); }
 };
-
-template<typename T> auto mmap_unique(uint64_t const array_size, bool const use_HP)
+//TODO: change usage of this function
+//Store Vertex Array
+template<typename T> auto mmap_unique(uint64_t const array_size, bool const use_HP, FAM_THP_FLAG fam_thp_flag)
 {
   // auto constexpr HP_align = 1 << 30;// 1 GB huge pages
   auto constexpr HP_align = 1 << 21;// 2 MB huge pages
@@ -74,6 +81,7 @@ template<typename T> auto mmap_unique(uint64_t const array_size, bool const use_
   BOOST_LOG_TRIVIAL(debug) << "nonRDMA aligned size: " << aligned_size
                            << " use_HP: " << use_HP;
   if (auto ptr = mmap(0, aligned_size, PROT_RW, MAP_ALLOC | HP_FLAGS, -1, 0)) {
+    fam_thp::advice_vertex_thp(ptr, aligned_size, fam_thp_flag);
     for (uint64_t i = 0; i < array_size; ++i) {
       (void)new (static_cast<T *>(ptr) + i) T{};// T must be default constructable
     }

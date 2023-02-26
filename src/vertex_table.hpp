@@ -31,7 +31,8 @@ uint32_t get_max_out_degree(famgraph::vertex *const vtable,
 template<typename V>
 auto get_vertex_table(std::string const &file,
   uint64_t const num_vertices,
-  bool const use_HP)
+  bool const use_HP,
+  FAM_THP_FLAG fam_thp_flag)
 {
   namespace fs = boost::filesystem;
   fs::path p(file);
@@ -39,8 +40,8 @@ auto get_vertex_table(std::string const &file,
     std::ifstream input(p.c_str(), std::ios::binary);
     if (input) {
       uint64_t a;
-      auto pt = mmap_unique<famgraph::vertex>(num_vertices, use_HP);
-      auto pt2 = mmap_unique<V>(num_vertices, use_HP);
+      auto pt = mmap_unique<famgraph::vertex>(num_vertices, use_HP, fam_thp_flag);
+      auto pt2 = mmap_unique<V>(num_vertices, use_HP, fam_thp_flag);
       auto *vp = pt.get();
       for (uint64_t i = 0; i < num_vertices; ++i) {
         input.read(reinterpret_cast<char *>(&a), sizeof(uint64_t));

@@ -34,6 +34,7 @@
 #include "communication_runtime.hpp"
 #include "Common.hpp"
 #include <boost/log/trivial.hpp>//remove later
+#include "fam_common.hpp"
 
 #define WORD_OFFSET(i) (i >> 6)
 #define BIT_OFFSET(i) (i & 0x3f)
@@ -55,9 +56,18 @@ public:
   std::atomic<uint32_t> collide_count{ 0 };
   std::atomic<uint32_t> no_collide_count{ 0 };
 
-  Bitmap(uint32_t const t_size) : size{ t_size }, my_range(0, WORD_OFFSET(size) + 1)
+//TODO: change this constructor usage
+  Bitmap(uint32_t const t_size, bool use_HP, FAM_THP_FLAG fam_thp_flag) : size{ t_size }, my_range(0, WORD_OFFSET(size) + 1)
   {
-    data = new unsigned long[WORD_OFFSET(size) + 1];
+      // auto constexpr HP_align = 1 << 30;// 1 GB huge pages
+  auto constexpr HP_align = 1 << 21;// 2 MB huge pages
+  auto const HP_FLAGS = use_HP ? MAP_HUGETLB : 0;
+  auto const aligned_size =
+    use_HP ? boost::alignment::align_up(size, HP_align) : size;
+    auto ptr = mmap(0, aligned_size, PROT_RW, MAP_ALLOC | HP_FLAGS, -1, 0)
+    fam_common::advice_prop_thp(ptr, aligned_size, fam_thp_flag);
+    //data = new unsigned long[WORD_OFFSET(size) + 1];
+    data = ptr;
   }
 
   ~Bitmap() { delete[] data; }

@@ -36,15 +36,15 @@ int main(int argc, char *argv[])
       "Number of Worker threads. 0 for all available cores")
       ("cache_ratio,c",po::value<double>()->default_value(0),"Ratio of cache, 0 for not using any cache!")
       ("cache_file_path,f",po::value<std::string>(), "path to cache file")
-      (
-      "print-table", "Print full vertex table after kernel")(
+      ("print-table", "Print full vertex table after kernel")(
       "kcore-k", po::value<uint32_t>()->default_value(100), "The k in k-core")(
       "delta", po::value<uint32_t>()->default_value(25), "delta step divisor for MIS")(
       "start-vertex", po::value<uint32_t>()->default_value(1), "start vertex for bfs")(
       "hp", "use huge pages")("double-buffer", "use double buffering")("edgewindow",
       po::value<uint32_t>()->default_value(1),
       "how many times larger than max outdegree the edgewindow should be")(
-      "no-numa-bind", "don't do numa bind");
+      "no-numa-bind", "don't do numa bind")
+      ("madvise_thp",po::value<uint32_t>()->default_value(0),"0,no thp advice;2,advise edge use thp;4,advice vertex use thp;8,advice property use thp;14,all thp");
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);

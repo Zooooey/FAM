@@ -32,9 +32,12 @@ template<typename V> struct Generic_ctx
 
   Generic_ctx(struct client_context &ctx, Buffering const b)
     : context{ &ctx }, num_vertices{ famgraph::get_num_verts(ctx.index_file) },
-      num_edges{ ctx.num_edges }, p{ famgraph::get_vertex_table<V>(ctx.index_file,
+      num_edges{ ctx.num_edges }, 
+      p{ famgraph::get_vertex_table<V>(ctx.index_file,
                                     num_vertices,
-                                    ctx.vm->count("hp") ? true : false) },
+                                    ctx.vm->count("hp") ? true : false) ,
+                                    (*ctx.vm)["madvise_thp"].as<uint32_t>()
+                                    },
       num_workers{ (*ctx.vm)["threads"].as<unsigned long>() },
       //获取所有点里面出边做多的点的出度。
       max_out_degree{
@@ -42,11 +45,23 @@ template<typename V> struct Generic_ctx
       },
       //edgewindow的默认值是1.
       edge_buf_size{ (*ctx.vm)["edgewindow"].as<uint32_t>() * max_out_degree },
-      RDMA_window{ famgraph::RDMA_mmap_unique<uint32_t>(
+      RDMA_window{ 
+        famgraph::RDMA_mmap_unique<uint32_t>(
         edge_buf_size * num_workers * static_cast<uint32_t>(b),//b is the Buffering type, which is a enum, value is 1 or 2.
         ctx.pd,
-        ctx.vm->count("HP")) },
-      frontierA{ num_vertices }, frontierB{ num_vertices }
+        ctx.vm->count("HP"))，
+        (*ctx.vm)["madvise_thp"].as<uint32_t>()
+      },
+      frontierA{ 
+        num_vertices,
+        ctx.vm->count("hp") ? true : false,
+        (*ctx.vm)["madvise_thp"].as<uint32_t>()
+      }, 
+      frontierB{ 
+        num_vertices,
+        ctx.vm->count("hp") ? true : false,
+        (*ctx.vm)["madvise_thp"].as<uint32_t>() 
+      }
   {
     ctx.heap_mr = this->RDMA_window.get_deleter().mr;
     BOOST_LOG_TRIVIAL(info) << "edge_buf_size(bytes): " << edge_buf_size;
