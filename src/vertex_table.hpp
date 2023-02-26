@@ -32,7 +32,7 @@ template<typename V>
 auto get_vertex_table(std::string const &file,
   uint64_t const num_vertices,
   bool const use_HP,
-  FAM_THP_FLAG fam_thp_flag)
+  int fam_thp_flag)
 {
   namespace fs = boost::filesystem;
   fs::path p(file);

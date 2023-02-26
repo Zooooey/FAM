@@ -57,7 +57,7 @@ public:
   std::atomic<uint32_t> no_collide_count{ 0 };
 
 //TODO: change this constructor usage
-  Bitmap(uint32_t const t_size, bool use_HP, FAM_THP_FLAG fam_thp_flag) : size{ t_size }, my_range(0, WORD_OFFSET(size) + 1)
+  Bitmap(uint32_t const t_size, bool use_HP, int fam_thp_flag) : size{ t_size }, my_range(0, WORD_OFFSET(size) + 1)
   {
       // auto constexpr HP_align = 1 << 30;// 1 GB huge pages
   auto constexpr HP_align = 1 << 21;// 2 MB huge pages

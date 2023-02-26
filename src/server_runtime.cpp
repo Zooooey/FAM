@@ -114,7 +114,7 @@ public:
   }
 };
 
-auto get_edge_list(std::string adj_file, ibv_pd *pd, bool use_HP, FAM_THP_FLAG fam_thp_flag)
+auto get_edge_list(std::string adj_file, ibv_pd *pd, bool use_HP, int fam_thp_flag)
 {
   namespace fs = boost::filesystem;
 

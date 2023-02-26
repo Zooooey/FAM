@@ -12,7 +12,7 @@ enum FAM_THP_FLAG{
 
 
 namespace fam_thp{
-    inline int huge_page_select(void *addr, size_t length, FAM_THP_FLAG user_select, FAM_THP_FLAG current_select){
+    inline int huge_page_select(void *addr, size_t length, int user_select, FAM_THP_FLAG current_select){
         int mad_ret;
         if(user_select & current_select){
             mad_ret = madvise(addr, length, MADV_HUGEPAGE);
@@ -22,18 +22,18 @@ namespace fam_thp{
         return mad_ret;
     }
 
-    int advice_edge_thp(void *addr, size_t length, FAM_THP_FLAG fam_thp_flag){
+    int advice_edge_thp(void *addr, size_t length, int fam_thp_flag){
         if(0 != huge_page_select(addr, length, fam_thp_flag, THP_EDGE_ARRAY)){
             BOOST_LOG_TRIVIAL(fatal) << "madvise for EDGE array of FAM failed! " <<"strerror(errno):"<<strerror(errno);  
         }
     }
-    int advice_vertex_thp(void *addr, size_t length, FAM_THP_FLAG fam_thp_flag){
+    int advice_vertex_thp(void *addr, size_t length, int fam_thp_flag){
         if(0 != huge_page_select(addr, length, fam_thp_flag, THP_VERTEX_ARRAY)){
             BOOST_LOG_TRIVIAL(fatal) << "madvise for VERTEX array of FAM failed! " <<"strerror(errno):"<<strerror(errno);  
         }
     }
 
-    void advice_prop_thp(void *addr, size_t length, FAM_THP_FLAG fam_thp_flag){
+    void advice_prop_thp(void *addr, size_t length, int fam_thp_flag){
         if(0 != huge_page_select(addr, length, fam_thp_flag, THP_PROPERTY_ARRAY)){
             BOOST_LOG_TRIVIAL(fatal) << "madvise for PROPERTY array of FAM failed! " <<"strerror(errno):"<<strerror(errno);  
         }

@@ -30,7 +30,7 @@ struct RDMA_mmap_deleter
  
  //TODO: change usage of this function
 //Store Edge Array
-template<typename T> auto RDMA_mmap_unique(uint64_t array_size, ibv_pd *pd, bool use_HP, FAM_THP_FLAG fam_thp_flag)
+template<typename T> auto RDMA_mmap_unique(uint64_t array_size, ibv_pd *pd, bool use_HP, int fam_thp_flag)
 {
   // auto constexpr HP_align = 1 << 30;// 1 GB huge pages
   auto constexpr HP_align = 1 << 21;// 2 MB huge pages
@@ -69,7 +69,7 @@ public:
 };
 //TODO: change usage of this function
 //Store Vertex Array
-template<typename T> auto mmap_unique(uint64_t const array_size, bool const use_HP, FAM_THP_FLAG fam_thp_flag)
+template<typename T> auto mmap_unique(uint64_t const array_size, bool const use_HP, int fam_thp_flag)
 {
   // auto constexpr HP_align = 1 << 30;// 1 GB huge pages
   auto constexpr HP_align = 1 << 21;// 2 MB huge pages
