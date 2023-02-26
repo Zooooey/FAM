@@ -35,8 +35,8 @@ template<typename V> struct Generic_ctx
       num_edges{ ctx.num_edges }, 
       p{ famgraph::get_vertex_table<V>(ctx.index_file,
                                     num_vertices,
-                                    ctx.vm->count("hp") ? true : false) ,
-                                    (*ctx.vm)["madvise_thp"].as<uint32_t>()
+                                    ctx.vm->count("hp") ? true : false ,
+                                    (*ctx.vm)["madvise_thp"].as<uint32_t>())
                                     },
       num_workers{ (*ctx.vm)["threads"].as<unsigned long>() },
       //获取所有点里面出边做多的点的出度。
@@ -49,8 +49,8 @@ template<typename V> struct Generic_ctx
         famgraph::RDMA_mmap_unique<uint32_t>(
         edge_buf_size * num_workers * static_cast<uint32_t>(b),//b is the Buffering type, which is a enum, value is 1 or 2.
         ctx.pd,
-        ctx.vm->count("HP"))，
-        (*ctx.vm)["madvise_thp"].as<uint32_t>()
+        ctx.vm->count("HP")，
+        (*ctx.vm)["madvise_thp"].as<uint32_t>())
       },
       frontierA{ 
         num_vertices,
