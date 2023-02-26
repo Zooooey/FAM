@@ -66,7 +66,7 @@ public:
   auto const aligned_size =
     use_HP ? boost::alignment::align_up(size, HP_align) : size;
     mmap_length = aligned_size;
-    auto ptr = mmap(0, aligned_size, PROT_RW, MAP_ALLOC | HP_FLAGS, -1, 0)
+    auto ptr = mmap(0, aligned_size, PROT_RW, MAP_ALLOC | HP_FLAGS, -1, 0);
     fam_common::advice_prop_thp(ptr, aligned_size, fam_thp_flag);
     //data = new unsigned long[WORD_OFFSET(size) + 1];
     data = static_cast<long unsigned int*>(ptr);
