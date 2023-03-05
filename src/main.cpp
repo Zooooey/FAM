@@ -18,7 +18,8 @@ void logging_init(boost::log::v2_mt_posix::trivial::severity_level level)
 }
 
 int main(int argc, char *argv[])
-{
+{ 
+  //mlockall(MCL_CURRENT | MCL_FUTURE);
   try {
     po::options_description desc{ "Options" };
     desc.add_options()("help,h", "Help screen")("verbose,v", "verbose")(

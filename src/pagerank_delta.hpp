@@ -74,7 +74,7 @@ public:
     auto vtable = c.p.second.get();
     auto *frontier = &c.frontierA;
     auto *next_frontier = &c.frontierB;
-    uint32_t const max_iterations = 200;
+    uint32_t const max_iterations = 5;
 
     CacheMap * cache_map = c.context->cacheMap;
 
