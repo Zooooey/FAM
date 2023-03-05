@@ -3,6 +3,7 @@
 #include <sys/mman.h>
 #include <boost/log/trivial.hpp>
 #include <string.h>
+#define ENABLE_MADVISE_THP true
 enum FAM_THP_FLAG{
     THP_VERTEX_ARRAY = (1 << 1),
     THP_EDGE_ARRAY = (1 << 2),
@@ -29,6 +30,9 @@ namespace fam_thp{
     }
 
     inline void advice_edge_thp(void *addr, size_t length, int fam_thp_flag){
+        if(!ENABLE_MADVISE_THP){
+            return;
+        }
         int mad_ret;
         if(fam_thp_flag & THP_EDGE_ARRAY){
             mad_ret = madvise(addr, length, MADV_HUGEPAGE);
@@ -42,6 +46,9 @@ namespace fam_thp{
         }
     }
     inline int advice_vertex_thp(void *addr, size_t length, int fam_thp_flag){
+        if(!ENABLE_MADVISE_THP){
+            return;
+        }
         int mad_ret;
         if(fam_thp_flag & THP_VERTEX_ARRAY){
             mad_ret = madvise(addr, length, MADV_HUGEPAGE);
@@ -56,6 +63,9 @@ namespace fam_thp{
     }
 
     inline void advice_prop_thp(void *addr, size_t length, int fam_thp_flag){
+        if(!ENABLE_MADVISE_THP){
+            return;
+        }
         int mad_ret;
         if(fam_thp_flag & THP_PROPERTY_ARRAY){
             mad_ret = madvise(addr, length, MADV_HUGEPAGE);
