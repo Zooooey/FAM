@@ -57,6 +57,7 @@ public:
     auto *next_frontier = &c.frontierB;
 
     CacheMap * cache_map = c.context->cacheMap;
+    CacheManager * cacheManager = c.context->cacheManager;
 
     tbb::blocked_range<uint32_t> const my_range(0, total_verts);
     tbb::parallel_for(my_range, [&](auto const &range) {
@@ -78,7 +79,7 @@ public:
     };
     
     while (!frontier->is_empty()) {
-      famgraph::single_buffer::ccy_for_each_active_batch(cache_map,
+      famgraph::single_buffer::ccy_for_each_active_batch(cache_map, cacheManager
         *frontier, my_range, c, kcore_push);
       frontier->clear();
       std::swap(frontier, next_frontier);

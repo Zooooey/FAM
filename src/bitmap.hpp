@@ -175,7 +175,7 @@ struct vertex_range
  */
 
 template<typename V, typename F>
-auto cache_pack_window(CacheMap *cache_map,
+auto cache_pack_window(CacheMap *cache_map,CacheManager *cacheManager
   //CacheElem **cache_hit_list,
   F const &function,
   std::array<struct ibv_send_wr, famgraph::WR_WINDOW_SIZE> &wr_window,
@@ -204,19 +204,29 @@ auto cache_pack_window(CacheMap *cache_map,
     if (frontier.get_bit(v)) {
       clock_gettime(CLOCK_MONOTONIC, &t1);
       bool in_cache;
-	  CacheElem * cache_elem;
+      //FIXME: merge bin cache and CacheMap into one!
+	    CacheElem * cache_elem;
       if(cache_map == nullptr){
         in_cache = false;
       }else {
         cache_elem = cache_map->get(v);
         in_cache = cache_elem != nullptr;
       }
+
+      VertexEdges *ve = 
+      if(cacheManager == nullptr){
+        in_cache = false;
+      }else {
+        in_cache = cacheManager->is_vertex_exist(v);
+      }
+      
       if (in_cache) {
-         //cout<<"cache hit:"<<v<<endl;
-        //cache_hit_list[cache_index++] = cache_elem;
-        //cache_hit_list[cache_index++] = nullptr;
-        // This vertex is in cache, NEXT ONE!!
-        function(cache_elem->getId(), cache_elem->get_neighbors(), cache_elem->get_out_degree());
+        //FIXME:
+        if(cacheManager != nullptr){
+          function(v, cacheManager->get_neighbors(v), cacheManager->get_out_degree(v));
+        }else {
+          function(cache_elem->getId(), cache_elem->get_neighbors(), cache_elem->get_out_degree());
+        }
         ctx->stats.cache_hit.local() += 1;
         v++;
         clock_gettime(CLOCK_MONOTONIC, &t2);
@@ -496,8 +506,9 @@ namespace single_buffer {
     }
   }
 
+//FIXME:merge cacheManager and CacheMap into one!
   template<typename F, typename Context>
-  void ccy_for_each_active_batch(CacheMap *cache_map,
+  void ccy_for_each_active_batch(CacheMap *cache_map,CacheManager *cacheManager
     Bitmap const &frontier,
     tbb::blocked_range<uint32_t> const my_range,
     Context &c,
@@ -533,7 +544,7 @@ namespace single_buffer {
         //for (uint32_t i = 0; i < cache_size; i++) { cache_hit_list[i] = nullptr; }
         // if vertex in cache, we don't send ramd request.
         clock_gettime(CLOCK_MONOTONIC, &t1);
-        auto const [next, wrs] = cache_pack_window<>(cache_map,
+        auto const [next, wrs] = cache_pack_window<>(cache_map,cacheManager
           //cache_hit_list,
           function,
           my_window,

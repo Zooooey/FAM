@@ -14,12 +14,15 @@
 #include "/home/ccy/Develop/GraphTools/COrder/Binning.hpp"
 #include "../src/graph_types.hpp" //Could probably just forward declare struct application
 #include "../src/stats.hpp"
+#include "ccy-csr-cache/CacheManager.h"
 
 void run_client(boost::program_options::variables_map& vm);
 
 struct client_context
 {
     CacheMap *cacheMap;
+    //FIXME: Should refactor and merge CacheMap and CacheManager into one.
+    CacheManager *cacheManager;
     double cache_ratio;
     famgraph::FG_stats stats;
     

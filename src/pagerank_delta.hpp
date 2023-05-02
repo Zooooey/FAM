@@ -77,6 +77,7 @@ public:
     uint32_t const max_iterations = 200;
 
     CacheMap * cache_map = c.context->cacheMap;
+    CacheManager *cacheManager = c.context->cacheManager;
 
     tbb::blocked_range<uint32_t> const my_range(0, total_verts);
     tbb::parallel_for(my_range, [&](auto const &range) {
@@ -106,7 +107,7 @@ public:
     uint32_t iter = 0;
     while (!frontier->is_empty() && ++iter < max_iterations) {
       tbb::tick_count start = tbb::tick_count::now();
-      famgraph::single_buffer::ccy_for_each_active_batch(cache_map,
+      famgraph::single_buffer::ccy_for_each_active_batch(cache_map,cacheManager
         *frontier, my_range, c, pagerank_push);
 
       tbb::parallel_for(my_range, [&](auto const &range) {

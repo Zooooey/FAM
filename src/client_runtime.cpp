@@ -26,6 +26,8 @@
 #include <numaif.h>
 #include <string.h>
 
+#include "ccy-csr-cache/CacheManager.h"
+
 char CACHE_FILE_PATH[] = "/home/ccy/data_set/MOLIERE_2016_FAM_GRAPH/bin_order.cache";
 
 namespace {
@@ -178,14 +180,22 @@ void on_completion(struct ibv_wc *wc)
             BinReader::read_bin_cache(ctx->vm->operator[]("cache_file_path").as<std::string>().c_str(), ctx->cache_ratio, ctx->app->num_vertices);
             BOOST_LOG_TRIVIAL(info)
             << "read_cache done! cache_map size is :" << cache_map->size() << endl;
+            //FIXME:merge into one
+            ctx->cacheMap = cache_map;
+            ctx->cacheManager = nullptr;
           } else if (endsWith(cache_file_path, ".cache")) {
             BOOST_LOG_TRIVIAL(info)
             << "Cache file:"<<  cache_file_path <<". Using original cache mode!" << endl;
-            exit(-1);
+            CacheManager 
+            ctx->cacheMap = nullptr;
+            ctx->cacheManager = new CacheManager(cache_file_path);
+            ctx->cacheManager->load(ctx->cache_ratio);
+            BOOST_LOG_TRIVIAL(info)
+            << "read_cache done! cache vertices count :" << ctx->cacheManager->cached_vertices_count() << endl;
           }
-          ctx->cacheMap = cache_map;
         } else {
           ctx->cacheMap = nullptr;
+          ctx->cacheManager = nullptr;
         }
         tbb::tick_count t1 = tbb::tick_count::now();
         char temp_str[255];

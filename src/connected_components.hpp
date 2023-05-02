@@ -77,7 +77,9 @@ public:
 
   void operator()()
   {
+    //FIXME:merge into one
     CacheMap * cache_map = c.context->cacheMap;
+    CacheManager * cacheManager = c.context->cacheManager;
     auto const total_verts = c.num_vertices;
     auto vtable = c.p.second.get();
     auto *frontier = &c.frontierA;
@@ -104,7 +106,7 @@ public:
 
     frontier->set_all();
     while (!frontier->is_empty()) {
-      famgraph::single_buffer::ccy_for_each_active_batch(cache_map,
+      famgraph::single_buffer::ccy_for_each_active_batch(cache_map,cacheManager
         *frontier, my_range, c, CC_push);
       frontier->clear();
       std::swap(frontier, next_frontier);

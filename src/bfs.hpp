@@ -30,69 +30,8 @@
 #define STOP_ROUND 2
 
 using namespace std;
-// const char *CACHE_FILE_PATH = "/home/ccy/data_set/soc-LiveJournal1/corder_cache_file";
-// const char *CACHE_FILE_PATH =
-// "/home/ccy/data_set/MOLIERE_2016_FAM_GRAPH/out_degree_first.cache";
-//char CACHE_FILE_PATH[] = "/home/ccy/data_set/soc-LiveJournal1/bin_order.cache";
-//char CACHE_FILE_PATH[] = "/home/ccy/data_set/MOLIERE_2016_FAM_GRAPH/bin_order.cache";
-// const char *CACHE_FILE_PATH =
-// "/home/ccy/data_set/soc-LiveJournal1/out_degree_first.cache";
-
 namespace bfs {
 constexpr uint32_t NULLVERT = 0xFFFFFFFF;
-
-// ccy code
-
-/*static CacheMap *read_cache(ifstream &cache_file,
-  size_t capacity, uint32_t total_vert)
-{
-  uint64_t cache_new_count = 0;
-
-  char buff[256];
-  size_t cur_have_been_read_bytes = 0;
-  ofstream CACHE_TRACE("cache_logic.trace", ios::out);
-  CacheMap *to_return = new CacheMap(total_vert);
-  while (cache_file.good() && cur_have_been_read_bytes < capacity) {
-    cache_file.read(buff, sizeof(unsigned int) + sizeof(unsigned long));
-    // unsigned int vertex_id = *(unsigned int *)buff;
-    unsigned int vertex_id = *reinterpret_cast<unsigned int *>(buff);
-    // unsigned long out_vertices_num = *((unsigned int *)buff + sizeof(unsigned int));
-    unsigned long out_vertices_num =
-      *(reinterpret_cast<unsigned long *>(buff + sizeof(unsigned int)));
-    if (vertex_id == TRACE_VERTEX_ID && TRACE_CACHE) {
-      CACHE_TRACE << "reading cache, vertex_id:" << vertex_id
-                  << " out_num:" << out_vertices_num << endl;
-    }
-    cur_have_been_read_bytes += sizeof(unsigned int) + sizeof(unsigned long);
-    // exceed capacity.
-    if (out_vertices_num * sizeof(unsigned long) + cur_have_been_read_bytes > capacity) {
-      break;
-    }
-
-    CacheElem *v_struct = new CacheElem(vertex_id, out_vertices_num);
-        cache_new_count+=out_vertices_num;
-        //cout<<"out_vertices_num:"<<cache_new_count<<endl;
-    if (vertex_id == TRACE_VERTEX_ID && TRACE_CACHE) {
-      CACHE_TRACE << "displaying target_verices of vertex_id:" << TRACE_VERTEX_ID << endl;
-    }
-    for (uint32_t i = 0; i < out_vertices_num; i++) {
-      cache_file.read(buff, sizeof(unsigned int));
-      uint32_t target_vertex = *(reinterpret_cast<uint32_t *>(buff));
-      v_struct->set_neighbor_at(i, target_vertex);
-      (v_struct->neightbors + static_cast<uint32_t>(i)) = target_vertex;
-      if (vertex_id == TRACE_VERTEX_ID && TRACE_CACHE) {
-        CACHE_TRACE << " " << target_vertex;
-      }
-      cur_have_been_read_bytes += sizeof(unsigned int);
-    }
-    if (vertex_id == TRACE_VERTEX_ID && TRACE_CACHE) { CACHE_TRACE << endl; }
-    to_return->put(v_struct->get_vertex_id(), v_struct);
-    //to_return->insert({ v_struct->vertex_id, v_struct });
-  }
-  return to_return;
-}*/
-
-// ccy end
 
 struct bfs_vertex
 {
@@ -131,6 +70,7 @@ public:
     */
 
     CacheMap * cache_map = c.context->cacheMap;
+    CacheManager *cacheManager = c.context->cacheManager;
 
     tbb::tick_count tbbt0 = tbb::tick_count::now();
     struct timespec t1, t2, res;
@@ -215,7 +155,7 @@ for (uint32_t i = range.begin(); i < range.end(); ++i) {
       // struct timespec t1, t2, res;
       clock_gettime(CLOCK_MONOTONIC, &t1);
       famgraph::single_buffer::ccy_for_each_active_batch(
-        cache_map, *frontier, my_range, c, bfs_push);
+        cache_map,cacheManager, *frontier, my_range, c, bfs_push);
       if (DEBUG) {
         cout << "next_frontier collide count:" << next_frontier->collide_count << endl;
         cout << "next_frontier no_collide count:" << next_frontier->no_collide_count
