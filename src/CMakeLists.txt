@@ -45,5 +45,6 @@ target_link_libraries(main PRIVATE
   Boost::program_options
   Boost::log
   Boost::log_setup
+  ccy-csr-cache
   )
 target_compile_definitions(main PRIVATE BOOST_LOG_DYN_LINK)
