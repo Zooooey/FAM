@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
       po::value<uint32_t>()->default_value(1),
       "how many times larger than max outdegree the edgewindow should be")(
       "no-numa-bind", "don't do numa bind")
-      ("madvise_thp",po::value<uint32_t>()->default_value(0),"0:no thp advice;\n2:advise vertex use thp;\n4:advice edge use thp;\n8:advice property use thp;\n14:all thp");
+      ("madvise_thp",po::value<uint32_t>()->default_value(0),"0:no thp advice;\n2:advise vertex use thp;\n4:advice edge use thp;\n8:advice property use thp;\n16:Cache region thp\n30:All thp");
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);

@@ -29,6 +29,19 @@
 char CACHE_FILE_PATH[] = "/home/ccy/data_set/MOLIERE_2016_FAM_GRAPH/bin_order.cache";
 
 namespace {
+
+bool endsWith(const char* str, const char* suffix) {
+    std::string s(str);
+    std::string sfx(suffix);
+
+    if (sfx.length() > s.length()) {
+        return false;
+    }
+
+    return s.substr(s.length() - sfx.length()) == sfx;
+}
+
+
 void validate_params(boost::program_options::variables_map const &vm)
 {
   if (!vm.count("server-addr"))
@@ -157,10 +170,19 @@ void on_completion(struct ibv_wc *wc)
           if(!ctx->vm->count("cache_file_path")){
             throw std::runtime_error("Not providing cache file path!");
           }
-          CacheMap *cache_map =
+          const char * cache_file_path = ctx->vm->operator[]("cache_file_path").as<std::string>().c_str();
+          if(endsWith(cache_file_path, ".bin_cache")){
+            BOOST_LOG_TRIVIAL(info)
+            << "Cache file:"<<  cache_file_path <<". Using bin_cache mode!" << endl;
+            CacheMap *cache_map =
             BinReader::read_bin_cache(ctx->vm->operator[]("cache_file_path").as<std::string>().c_str(), ctx->cache_ratio, ctx->app->num_vertices);
-          BOOST_LOG_TRIVIAL(info)
+            BOOST_LOG_TRIVIAL(info)
             << "read_cache done! cache_map size is :" << cache_map->size() << endl;
+          } else if (endsWith(cache_file_path, ".cache")) {
+            BOOST_LOG_TRIVIAL(info)
+            << "Cache file:"<<  cache_file_path <<". Using original cache mode!" << endl;
+            exit(-1);
+          }
           ctx->cacheMap = cache_map;
         } else {
           ctx->cacheMap = nullptr;
