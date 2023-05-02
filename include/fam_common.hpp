@@ -8,7 +8,8 @@ enum FAM_THP_FLAG{
     THP_VERTEX_ARRAY = (1 << 1),
     THP_EDGE_ARRAY = (1 << 2),
     THP_PROPERTY_ARRAY = (1 << 3),
-    THP_ALL = THP_VERTEX_ARRAY|THP_EDGE_ARRAY|THP_PROPERTY_ARRAY
+    THP_CACHE_REGION = (1 << 4),
+    THP_ALL = THP_VERTEX_ARRAY|THP_EDGE_ARRAY|THP_PROPERTY_ARRAY|THP_CACHE_REGION
 };
 
 
@@ -47,7 +48,7 @@ namespace fam_thp{
     }
     inline int advice_vertex_thp(void *addr, size_t length, int fam_thp_flag){
         if(!ENABLE_MADVISE_THP){
-            return;
+            return 0;
         }
         int mad_ret;
         if(fam_thp_flag & THP_VERTEX_ARRAY){
