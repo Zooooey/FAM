@@ -314,6 +314,7 @@ void run_client(boost::program_options::variables_map &vm)
   if (numa_bind) do_numa_map(num_connections);
 
   BOOST_LOG_TRIVIAL(info) << "Starting client";
+  BOOST_LOG_TRIVIAL(info) << "PID:"<<getpid();
   
   BOOST_LOG_TRIVIAL(info) << "Server IPoIB address: " << server_ip
                           << " port: " << server_port;
