@@ -75,7 +75,7 @@ void * AbstractServer::poll_cq(void *arg)
 
   AbstractServer* instance = static_cast<AbstractServer*>(arg);
 
-  struct context *ss_ctx = static_cast<struct context *>(instance->fam_ib_ctx);
+  struct fam_ib_context *ss_ctx = static_cast<struct fam_ib_context *>(instance->fam_ib_ctx);
 
   struct ibv_cq *cq = ss_ctx->cq;
   struct ibv_wc wc;
@@ -146,7 +146,7 @@ void AbstractServer::build_context(struct ibv_context *verbs)
     return;
   }
 
-  fam_ib_ctx = static_cast<struct context *>(malloc(sizeof(struct context)));
+  fam_ib_ctx = static_cast<struct fam_ib_context *>(malloc(sizeof(struct fam_ib_context)));
 
   fam_ib_ctx->ctx = verbs;
   fam_ib_ctx->connections = 0;
