@@ -198,7 +198,7 @@ void FAMServer::on_pre_conn(struct rdma_cm_id *id)
     throw std::runtime_error("posix memalign failed");
   }
 
-  TEST_Z(ctx->tx_msg_mr = ibv_reg_mr(s_ctx->pd, ctx->tx_msg, sizeof(*ctx->tx_msg), 0));
+  TEST_Z(ctx->tx_msg_mr = ibv_reg_mr(fam_ib_ctx->pd, ctx->tx_msg, sizeof(*ctx->tx_msg), 0));
 
   if (posix_memalign(reinterpret_cast<void **>(&ctx->rx_msg),
         static_cast<size_t>(sysconf(_SC_PAGESIZE)),
@@ -206,7 +206,7 @@ void FAMServer::on_pre_conn(struct rdma_cm_id *id)
     throw std::runtime_error("posix memalign failed");
   }
   TEST_Z(ctx->rx_msg_mr = ibv_reg_mr(
-           s_ctx->pd, ctx->rx_msg, sizeof(*ctx->rx_msg), IBV_ACCESS_LOCAL_WRITE));
+           fam_ib_ctx->pd, ctx->rx_msg, sizeof(*ctx->rx_msg), IBV_ACCESS_LOCAL_WRITE));
 
   post_receive(id);
 }
@@ -216,7 +216,7 @@ void FAMServer::on_connection(struct rdma_cm_id *id)
   struct server_context *ctx = static_cast<struct server_context *>(id->context);
 
   auto [ptr, mr, edges] =
-    get_edge_list(ctx->adj_filename, s_ctx->pd, ctx->use_hp, ctx->fam_thp_flag);
+    get_edge_list(ctx->adj_filename, fam_ib_ctx->pd, ctx->use_hp, ctx->fam_thp_flag);
   ctx->v.emplace_back(std::move(ptr));
 
   ctx->tx_msg->id = MSG_MR;
