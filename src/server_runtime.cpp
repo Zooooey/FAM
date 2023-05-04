@@ -70,32 +70,19 @@ public:
   }
 };
 
-  struct conn_context// consider renaming server context
-  {
-    std::string adj_filename;
-    std::vector<std::unique_ptr<uint32_t, famgraph::RDMA_mmap_deleter>> v;
-
-    struct message *tx_msg;
-    struct ibv_mr *tx_msg_mr;
-
-    struct message *rx_msg;
-    struct ibv_mr *rx_msg_mr;
-
-    bool use_hp{ false };
-
-    int fam_thp_flag{ 0 };
-
-    conn_context(std::string const &file) : adj_filename{ file } {}
-
-    conn_context &operator=(const conn_context &) = delete;
-    conn_context(const conn_context &) = delete;
-  };
-
 
 class FAMServer : public AbstractServer
 {
 private:
   struct conn_context *g_ctx = 0;
+
+    template<typename T> auto num_elements(boost::filesystem::path const &p)
+  {
+    const auto file_size = boost::filesystem::file_size(p);
+    const auto n = file_size / sizeof(T);
+    return n;
+  }
+
 
   void post_receive(struct rdma_cm_id *id)
   {
@@ -164,13 +151,6 @@ private:
     sge.lkey = ctx->tx_msg_mr->lkey;
 
     TEST_NZ(ibv_post_send(id->qp, &wr, &bad_wr));
-  }
-
-  template<typename T> auto num_elements(boost::filesystem::path const &p)
-  {
-    const auto file_size = boost::filesystem::file_size(p);
-    const auto n = file_size / sizeof(T);
-    return n;
   }
 
 public:
