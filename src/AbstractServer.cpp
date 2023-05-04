@@ -4,11 +4,71 @@
 #define TEST_NZ(x) do { if ( (x)) rc_die("error: " #x " failed (returned non-zero)." ); } while (0)
 #define TEST_Z(x)  do { if (!(x)) rc_die("error: " #x " failed (returned zero/null)."); } while (0)
 
+
+namespace {
+    std::string cm_event_to_string(rdma_cm_event_type e)
+{
+  switch (e) {
+  case RDMA_CM_EVENT_ADDR_RESOLVED:
+    return "RDMA_CM_EVENT_ADDR_RESOLVED";
+    break;
+  case RDMA_CM_EVENT_ADDR_ERROR:
+    return "RDMA_CM_EVENT_ADDR_ERROR";
+    break;
+  case RDMA_CM_EVENT_ROUTE_RESOLVED:
+    return "RDMA_CM_EVENT_ROUTE_RESOLVED";
+    break;
+  case RDMA_CM_EVENT_ROUTE_ERROR:
+    return "RDMA_CM_EVENT_ROUTE_ERROR";
+    break;
+  case RDMA_CM_EVENT_CONNECT_REQUEST:
+    return "RDMA_CM_EVENT_CONNECT_REQUEST";
+    break;
+  case RDMA_CM_EVENT_CONNECT_RESPONSE:
+    return "RDMA_CM_EVENT_CONNECT_RESPONSE";
+    break;
+  case RDMA_CM_EVENT_CONNECT_ERROR:
+    return "RDMA_CM_EVENT_CONNECT_ERROR";
+    break;
+  case RDMA_CM_EVENT_UNREACHABLE:
+    return "RDMA_CM_EVENT_UNREACHABLE";
+    break;
+  case RDMA_CM_EVENT_REJECTED:
+    return "RDMA_CM_EVENT_REJECTED";
+    break;
+  case RDMA_CM_EVENT_ESTABLISHED:
+    return "RDMA_CM_EVENT_ESTABLISHED";
+    break;
+  case RDMA_CM_EVENT_DISCONNECTED:
+    return "RDMA_CM_EVENT_DISCONNECTED";
+    break;
+  case RDMA_CM_EVENT_DEVICE_REMOVAL:
+    return "RDMA_CM_EVENT_DEVICE_REMOVAL";
+    break;
+  case RDMA_CM_EVENT_MULTICAST_JOIN:
+    return "RDMA_CM_EVENT_MULTICAST_JOIN";
+    break;
+  case RDMA_CM_EVENT_MULTICAST_ERROR:
+    return "RDMA_CM_EVENT_MULTICAST_ERROR";
+    break;
+  case RDMA_CM_EVENT_ADDR_CHANGE:
+    return "RDMA_CM_EVENT_ADDR_CHANGE";
+    break;
+  case RDMA_CM_EVENT_TIMEWAIT_EXIT:
+    return "RDMA_CM_EVENT_TIMEWAIT_EXIT";
+    break;
+  }
+  return "To string event unknown";
+}
 void AbstractServer::rc_die(const char *reason)
 {
   fprintf(stderr, "%s\n", reason);
   exit(EXIT_FAILURE);
 }
+
+}
+
+
 
 void * AbstractServer::poll_cq(void *arg)
 {
