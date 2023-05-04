@@ -22,83 +22,7 @@
 #include "AbstractServer.h"
 
 
-class FAMServer :public AbstractServer{
-private:
-  struct conn_context *g_ctx = 0;
-  FAMServer(conn_context* ctx){
-    this->g_ctx = ctx;
-  }
 
-public:
-  void on_pre_conn(struct rdma_cm_id *id) override{
-     BOOST_LOG_TRIVIAL(debug) << "precon";
-  struct conn_context *ctx = g_ctx;// find a better way later
-
-  id->context = ctx;
-
-  if (posix_memalign(reinterpret_cast<void **>(&ctx->tx_msg),
-        static_cast<size_t>(sysconf(_SC_PAGESIZE)),
-        sizeof(*ctx->tx_msg))) {
-    throw std::runtime_error("posix memalign failed");
-  }
-
-  TEST_Z(ctx->tx_msg_mr = ibv_reg_mr(rc_get_pd(), ctx->tx_msg, sizeof(*ctx->tx_msg), 0));
-
-  if (posix_memalign(reinterpret_cast<void **>(&ctx->rx_msg),
-        static_cast<size_t>(sysconf(_SC_PAGESIZE)),
-        sizeof(*ctx->rx_msg))) {
-    throw std::runtime_error("posix memalign failed");
-  }
-  TEST_Z(ctx->rx_msg_mr = ibv_reg_mr(
-           rc_get_pd(), ctx->rx_msg, sizeof(*ctx->rx_msg), IBV_ACCESS_LOCAL_WRITE));
-
-  post_receive(id);
-  }
-  void on_connection(struct rdma_cm_id *id) override{
-      BOOST_LOG_TRIVIAL(debug) << "on connection";
-  struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
-
-  auto [ptr, mr, edges] = get_edge_list(ctx->adj_filename, rc_get_pd(), ctx->use_hp, ctx->fam_thp_flag);
-  ctx->v.emplace_back(std::move(ptr));
-  
-  ctx->tx_msg->id = MSG_MR;
-  ctx->tx_msg->data.mr.addr = reinterpret_cast<uintptr_t>(mr->addr);
-  ctx->tx_msg->data.mr.rkey = mr->rkey;
-  ctx->tx_msg->data.mr.total_edges = edges;
-
-  send_message(id);
-  }
-  void on_completion(struct ibv_wc *wc) override{
-  BOOST_LOG_TRIVIAL(debug) << "completion";
-  struct rdma_cm_id *id = reinterpret_cast<struct rdma_cm_id *>(wc->wr_id);
-  struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
-
-  if (wc->opcode & IBV_WC_RECV) {
-    if (ctx->rx_msg->id == MSG_READY) {
-      post_receive(id);
-      BOOST_LOG_TRIVIAL(debug) << "received READY";
-      ctx->tx_msg->id = MSG_DONE;
-      send_message(id);
-    } else if (ctx->rx_msg->id == MSG_DONE) {// server never receives this
-      printf("received DONE\n");
-      post_receive(id);
-      ctx->tx_msg->id = MSG_DONE;
-      send_message(id);
-      // rc_disconnect(id);//should never recv this...
-      return;
-    }
-  }
-}
-  void on_disconnect(struct rdma_cm_id *id) override
-{
-  struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
-
-  ibv_dereg_mr(ctx->rx_msg_mr);
-  ibv_dereg_mr(ctx->tx_msg_mr);
-  free(ctx->rx_msg);
-  free(ctx->tx_msg);
-}
-};
 
 namespace {
 
@@ -261,6 +185,85 @@ void post_receive(struct rdma_cm_id *id)
 
   TEST_NZ(ibv_post_recv(id->qp, &wr, &bad_wr));
 }
+
+class FAMServer :public AbstractServer{
+private:
+  struct conn_context *g_ctx = 0;
+  FAMServer(conn_context* ctx){
+    this->g_ctx = ctx;
+  }
+
+public:
+  void on_pre_conn(struct rdma_cm_id *id) override{
+     BOOST_LOG_TRIVIAL(debug) << "precon";
+  struct conn_context *ctx = g_ctx;// find a better way later
+
+  id->context = ctx;
+
+  if (posix_memalign(reinterpret_cast<void **>(&ctx->tx_msg),
+        static_cast<size_t>(sysconf(_SC_PAGESIZE)),
+        sizeof(*ctx->tx_msg))) {
+    throw std::runtime_error("posix memalign failed");
+  }
+
+  TEST_Z(ctx->tx_msg_mr = ibv_reg_mr(rc_get_pd(), ctx->tx_msg, sizeof(*ctx->tx_msg), 0));
+
+  if (posix_memalign(reinterpret_cast<void **>(&ctx->rx_msg),
+        static_cast<size_t>(sysconf(_SC_PAGESIZE)),
+        sizeof(*ctx->rx_msg))) {
+    throw std::runtime_error("posix memalign failed");
+  }
+  TEST_Z(ctx->rx_msg_mr = ibv_reg_mr(
+           rc_get_pd(), ctx->rx_msg, sizeof(*ctx->rx_msg), IBV_ACCESS_LOCAL_WRITE));
+
+  post_receive(id);
+  }
+  void on_connection(struct rdma_cm_id *id) override{
+      BOOST_LOG_TRIVIAL(debug) << "on connection";
+  struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
+
+  auto [ptr, mr, edges] = get_edge_list(ctx->adj_filename, rc_get_pd(), ctx->use_hp, ctx->fam_thp_flag);
+  ctx->v.emplace_back(std::move(ptr));
+  
+  ctx->tx_msg->id = MSG_MR;
+  ctx->tx_msg->data.mr.addr = reinterpret_cast<uintptr_t>(mr->addr);
+  ctx->tx_msg->data.mr.rkey = mr->rkey;
+  ctx->tx_msg->data.mr.total_edges = edges;
+
+  send_message(id);
+  }
+  void on_completion(struct ibv_wc *wc) override{
+  BOOST_LOG_TRIVIAL(debug) << "completion";
+  struct rdma_cm_id *id = reinterpret_cast<struct rdma_cm_id *>(wc->wr_id);
+  struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
+
+  if (wc->opcode & IBV_WC_RECV) {
+    if (ctx->rx_msg->id == MSG_READY) {
+      post_receive(id);
+      BOOST_LOG_TRIVIAL(debug) << "received READY";
+      ctx->tx_msg->id = MSG_DONE;
+      send_message(id);
+    } else if (ctx->rx_msg->id == MSG_DONE) {// server never receives this
+      printf("received DONE\n");
+      post_receive(id);
+      ctx->tx_msg->id = MSG_DONE;
+      send_message(id);
+      // rc_disconnect(id);//should never recv this...
+      return;
+    }
+  }
+}
+  void on_disconnect(struct rdma_cm_id *id) override
+{
+  struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
+
+  ibv_dereg_mr(ctx->rx_msg_mr);
+  ibv_dereg_mr(ctx->tx_msg_mr);
+  free(ctx->rx_msg);
+  free(ctx->tx_msg);
+}
+};
+
 
 }// namespace
 
