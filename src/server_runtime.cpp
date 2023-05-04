@@ -21,6 +21,26 @@
 #include "fam_common.hpp"
 #include "AbstractServer.h"
 
+struct conn_context// consider renaming server context
+{
+  std::string adj_filename;
+  std::vector<std::unique_ptr<uint32_t, famgraph::RDMA_mmap_deleter>> v;
+
+  struct message *tx_msg;
+  struct ibv_mr *tx_msg_mr;
+
+  struct message *rx_msg;
+  struct ibv_mr *rx_msg_mr;
+
+  bool use_hp{ false };
+
+  conn_context(std::string const &file) : adj_filename{ file } {}
+
+  conn_context &operator=(const conn_context &) = delete;
+  conn_context(const conn_context &) = delete;
+};
+
+
 class file_mapper
 {
   constexpr static uint64_t default_chunk = 30UL * (1 << 30);// 30 GB
