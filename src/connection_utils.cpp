@@ -189,7 +189,7 @@ void event_loop(struct rdma_event_channel *ec, int exit_on_disconnect)
       latch2 = true;
     } else if (event_copy.event == RDMA_CM_EVENT_ESTABLISHED) {// Runs on both
       if (s_on_connect_cb && !latch3) s_on_connect_cb(event_copy.id);
-      BOOST_LOG_TRIVIAL(debug) << "BOTH1";
+      BOOST_LOG_TRIVIAL(info) << "RDMA_CM Established, id:"<<event_copy.id;
       latch3 = true;
       s_ctx->connections++;
     } else if (event_copy.event == RDMA_CM_EVENT_DISCONNECTED) {// Runs on both
@@ -287,7 +287,7 @@ void rc_server_loop(const char *port)
   TEST_NZ(rdma_bind_addr(listener, reinterpret_cast<struct sockaddr *>(&addr)));
   TEST_NZ(rdma_listen(listener, 10)); /* backlog=10 is arbitrary */
 
-  event_loop(ec, 1);// exit on disconnect
+  event_loop(ec, 0);// exit on disconnect
 
   rdma_destroy_id(listener);
   rdma_destroy_event_channel(ec);

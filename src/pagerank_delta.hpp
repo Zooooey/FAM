@@ -107,7 +107,7 @@ public:
     uint32_t iter = 0;
     while (!frontier->is_empty() && ++iter < max_iterations) {
       tbb::tick_count start = tbb::tick_count::now();
-      famgraph::single_buffer::ccy_for_each_active_batch(cache_map,cacheManager
+      famgraph::single_buffer::ccy_for_each_active_batch(cache_map,cacheManager,
         *frontier, my_range, c, pagerank_push);
 
       tbb::parallel_for(my_range, [&](auto const &range) {

@@ -175,7 +175,7 @@ struct vertex_range
  */
 
 template<typename V, typename F>
-auto cache_pack_window(CacheMap *cache_map,CacheManager *cacheManager
+auto cache_pack_window(CacheMap *cache_map,CacheManager *cacheManager,
   //CacheElem **cache_hit_list,
   F const &function,
   std::array<struct ibv_send_wr, famgraph::WR_WINDOW_SIZE> &wr_window,
@@ -213,7 +213,7 @@ auto cache_pack_window(CacheMap *cache_map,CacheManager *cacheManager
         in_cache = cache_elem != nullptr;
       }
 
-      VertexEdges *ve = 
+      // VertexEdges *ve = 
       if(cacheManager == nullptr){
         in_cache = false;
       }else {
@@ -508,7 +508,7 @@ namespace single_buffer {
 
 //FIXME:merge cacheManager and CacheMap into one!
   template<typename F, typename Context>
-  void ccy_for_each_active_batch(CacheMap *cache_map,CacheManager *cacheManager
+  void ccy_for_each_active_batch(CacheMap *cache_map,CacheManager *cacheManager,
     Bitmap const &frontier,
     tbb::blocked_range<uint32_t> const my_range,
     Context &c,

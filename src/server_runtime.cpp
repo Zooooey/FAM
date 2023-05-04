@@ -20,6 +20,11 @@
 #include "messages.hpp"
 #include "fam_common.hpp"
 
+
+class Server{
+
+};
+
 namespace {
 struct conn_context *g_ctx = 0;
 
@@ -117,12 +122,14 @@ public:
 auto get_edge_list(std::string adj_file, ibv_pd *pd, bool use_HP, int fam_thp_flag)
 {
   namespace fs = boost::filesystem;
+  BOOST_LOG_TRIVIAL(info) << "Reading adj file: "<<adj_file;
 
   fs::path p(adj_file);
   if (!(fs::exists(p) && fs::is_regular_file(p)))
     throw std::runtime_error(".adj file not found");
 
   auto const edges_count = num_elements<uint32_t>(p);
+  BOOST_LOG_TRIVIAL(info) << "adj file edges count: "<<edges_count;
   auto ptr = famgraph::RDMA_mmap_unique<uint32_t>(edges_count, pd, use_HP, fam_thp_flag);
   auto array = reinterpret_cast<char*>(ptr.get());
   auto const filesize = edges_count * sizeof(uint32_t);

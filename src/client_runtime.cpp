@@ -186,9 +186,11 @@ void on_completion(struct ibv_wc *wc)
           } else if (endsWith(cache_file_path, ".cache")) {
             BOOST_LOG_TRIVIAL(info)
             << "Cache file:"<<  cache_file_path <<". Using original cache mode!" << endl;
-            CacheManager 
+            
             ctx->cacheMap = nullptr;
-            ctx->cacheManager = new CacheManager(cache_file_path);
+            char* non_const_str = new char[strlen(cache_file_path) + 1]; // allocate buffer
+            strcpy(non_const_str, cache_file_path); // copy string to buffer
+            ctx->cacheManager = new CacheManager(non_const_str);
             ctx->cacheManager->load(ctx->cache_ratio);
             BOOST_LOG_TRIVIAL(info)
             << "read_cache done! cache vertices count :" << ctx->cacheManager->cached_vertices_count() << endl;
@@ -200,7 +202,7 @@ void on_completion(struct ibv_wc *wc)
         tbb::tick_count t1 = tbb::tick_count::now();
         char temp_str[255];
         sprintf(temp_str, "%.2f", (t1 - t0).seconds());
-        BOOST_LOG_TRIVIAL(info) << "Reading Bin Cache Time(s): " << temp_str <<endl ;
+        BOOST_LOG_TRIVIAL(info) << "Reading Cache Time(s): " << temp_str <<endl ;
         if (ctx->kernel == "bfs") {
           ctx->app_thread = std::thread(
             famgraph::run_kernel<bfs::bfs_kernel<famgraph::Buffering::SINGLE>>,
