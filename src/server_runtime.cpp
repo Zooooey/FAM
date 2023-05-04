@@ -304,7 +304,7 @@ void run(boost::program_options::variables_map const &vm) override
   TEST_Z(ec = rdma_create_event_channel());
   TEST_NZ(rdma_create_id(ec, &listener, NULL, RDMA_PS_TCP));
   TEST_NZ(rdma_bind_addr(listener, reinterpret_cast<struct sockaddr *>(&addr)));
-  TEST_NZ(rdma_listen(listener, 10)); /* backlog=10 is arbitrary */
+  TEST_NZ(rdma_listen(listener, 10)); /* backlog=10 is arbitrary 
 
   event_loop(ec, 0);// exit on disconnect
 
