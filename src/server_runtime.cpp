@@ -34,6 +34,8 @@ struct conn_context// consider renaming server context
 
   bool use_hp{ false };
 
+  int fam_thp_flag{ 0 };
+
   conn_context(std::string const &file) : adj_filename{ file } {}
 
   conn_context &operator=(const conn_context &) = delete;
