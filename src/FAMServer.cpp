@@ -100,7 +100,7 @@ template<typename T> auto num_elements(boost::filesystem::path const &p)
   const auto n = file_size / sizeof(T);
   return n;
 }
-void FAMServer::post_receive(struct rdma_cm_id *id)
+void post_receive(struct rdma_cm_id *id)
 {
   struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
   struct ibv_recv_wr wr, *bad_wr = NULL;
