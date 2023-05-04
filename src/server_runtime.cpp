@@ -24,7 +24,7 @@
 
 
 
-namespace s_runtime{
+namespace {
   struct conn_context *g_ctx = 0;
 
 void validate_params(boost::program_options::variables_map const &vm)
