@@ -299,7 +299,7 @@ void run(boost::program_options::variables_map const &vm)
 
   memset(&addr, 0, sizeof(addr));
   addr.sin6_family = AF_INET6;
-  addr.sin6_port = htons(static_cast<uint16_t>(atoi(server_port)));
+  addr.sin6_port = htons(static_cast<uint16_t>(atoi(server_port.c_str())));
 
   TEST_Z(ec = rdma_create_event_channel());
   TEST_NZ(rdma_create_id(ec, &listener, NULL, RDMA_PS_TCP));
