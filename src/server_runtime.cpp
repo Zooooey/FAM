@@ -268,7 +268,26 @@ public:
 };
 
 namespace {
+  
   conn_context *g_ctx = 0;
+  void post_receive(struct rdma_cm_id *id)
+  {
+    struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
+    struct ibv_recv_wr wr, *bad_wr = NULL;
+    struct ibv_sge sge;
+
+    memset(&wr, 0, sizeof(wr));
+
+    wr.wr_id = reinterpret_cast<uintptr_t>(id);
+    wr.sg_list = &sge;
+    wr.num_sge = 1;
+
+    sge.addr = reinterpret_cast<uintptr_t>(ctx->rx_msg);
+    sge.length = sizeof(*ctx->rx_msg);
+    sge.lkey = ctx->rx_msg_mr->lkey;
+
+    TEST_NZ(ibv_post_recv(id->qp, &wr, &bad_wr));
+  }
    void on_pre_conn(struct rdma_cm_id *id) 
   {
     BOOST_LOG_TRIVIAL(debug) << "precon";
