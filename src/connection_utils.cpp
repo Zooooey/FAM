@@ -331,7 +331,7 @@ void rc_client_loop(const char *host, const char *port, struct client_context *c
   rdma_destroy_event_channel(ec);
 }
 
-void rc_server_loop(const char *port, FAMServer *server);
+void rc_server_loop(const char *port, AbstractServer *server);
 {
   struct sockaddr_in6 addr;
   struct rdma_cm_id *listener = NULL;
