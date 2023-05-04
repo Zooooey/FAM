@@ -182,7 +182,7 @@ void event_loop(struct rdma_event_channel *ec, int exit_on_disconnect)
       BOOST_LOG_TRIVIAL(debug) << "CLIENT2";
     } else if (event_copy.event == RDMA_CM_EVENT_CONNECT_REQUEST) {// Runs on server
       build_connection(event_copy.id, !latch2);
-      BOOST_LOG_TRIVIAL(debug) << "SERVER1";
+      BOOST_LOG_TRIVIAL(info) << "RDMA_CM Connect request received!";
       if (s_on_pre_conn_cb && !latch2) s_on_pre_conn_cb(event_copy.id);
 
       TEST_NZ(rdma_accept(event_copy.id, &cm_params));
@@ -194,7 +194,7 @@ void event_loop(struct rdma_event_channel *ec, int exit_on_disconnect)
       s_ctx->connections++;
     } else if (event_copy.event == RDMA_CM_EVENT_DISCONNECTED) {// Runs on both
       rdma_destroy_qp(event_copy.id);
-      BOOST_LOG_TRIVIAL(debug) << "BOTH2";
+      BOOST_LOG_TRIVIAL(info) << "Connection disconnected, id:"<<event_copy.id;
       if (s_on_disconnect_cb && !latch4) s_on_disconnect_cb(event_copy.id);
 
       rdma_destroy_id(event_copy.id);
