@@ -331,7 +331,8 @@ void rc_client_loop(const char *host, const char *port, struct client_context *c
   rdma_destroy_event_channel(ec);
 }
 
-void rc_server_loop(const char *port, AbstractServer *server)
+//void rc_server_loop(const char *port, AbstractServer *server)
+void rc_server_loop(const char *port)
 {
   struct sockaddr_in6 addr;
   struct rdma_cm_id *listener = NULL;
@@ -346,7 +347,7 @@ void rc_server_loop(const char *port, AbstractServer *server)
   TEST_NZ(rdma_bind_addr(listener, reinterpret_cast<struct sockaddr *>(&addr)));
   TEST_NZ(rdma_listen(listener, 10)); /* backlog=10 is arbitrary */
 
-  event_loop(ec, 0, server);// exit on disconnect
+  event_loop(ec, 0);// exit on disconnect
 
   rdma_destroy_id(listener);
   rdma_destroy_event_channel(ec);
