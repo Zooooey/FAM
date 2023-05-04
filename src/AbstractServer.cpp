@@ -1,8 +1,7 @@
 #include "AbstractServer.h"
 #include <boost/log/trivial.hpp>
 
-#define TEST_NZ(x) do { if ( (x)) rc_die("error: " #x " failed (returned non-zero)." ); } while (0)
-#define TEST_Z(x)  do { if (!(x)) rc_die("error: " #x " failed (returned zero/null)."); } while (0)
+
 
 
 namespace {
@@ -60,11 +59,7 @@ namespace {
   }
   return "To string event unknown";
 }
-void rc_die(const char *reason)
-{
-  fprintf(stderr, "%s\n", reason);
-  exit(EXIT_FAILURE);
-}
+
 
 }
 
