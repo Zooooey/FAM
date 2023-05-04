@@ -191,7 +191,7 @@ public:
 
   FAMServer() { }
 
-  void on_pre_conn(struct rdma_cm_id *id) override
+  void on_pre_conn(struct rdma_cm_id *id) 
   {
     BOOST_LOG_TRIVIAL(debug) << "precon";
     struct conn_context *ctx = g_ctx;// find a better way later
@@ -217,7 +217,7 @@ public:
 
     post_receive(id);
   }
-  void on_connection(struct rdma_cm_id *id) override
+  void on_connection(struct rdma_cm_id *id) 
   {
     BOOST_LOG_TRIVIAL(debug) << "on connection";
     struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
@@ -233,7 +233,7 @@ public:
 
     send_message(id);
   }
-  void on_completion(struct ibv_wc *wc) override
+  void on_completion(struct ibv_wc *wc) 
   {
     BOOST_LOG_TRIVIAL(debug) << "completion";
     struct rdma_cm_id *id = reinterpret_cast<struct rdma_cm_id *>(wc->wr_id);
@@ -255,7 +255,7 @@ public:
       }
     }
   }
-  void on_disconnect(struct rdma_cm_id *id) override
+  void on_disconnect(struct rdma_cm_id *id) 
   {
     struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
 
@@ -264,7 +264,7 @@ public:
     free(ctx->rx_msg);
     free(ctx->tx_msg);
   }
-void run(boost::program_options::variables_map const &vm) override
+void run(boost::program_options::variables_map const &vm) 
 {
   // 校验参数
   validate_params(vm);

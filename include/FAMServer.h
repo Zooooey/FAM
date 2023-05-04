@@ -18,6 +18,11 @@ private:
 
 public:
   static void validate_params(boost::program_options::variables_map const &vm);
+  virtual void on_pre_conn(struct rdma_cm_id *id) override;
+  virtual void on_connection(struct rdma_cm_id *id) override;
+  virtual void on_completion(struct ibv_wc *wc) override;
+  virtual void on_disconnect(struct rdma_cm_id *id) override;
+  virtual void run(boost::program_options::variables_map const &vm) override;
   FAMServer();
 };
 
