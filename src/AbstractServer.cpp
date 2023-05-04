@@ -9,6 +9,29 @@ void AbstractServer::rc_die(const char *reason)
   exit(EXIT_FAILURE);
 }
 
+void * AbstractServer::poll_cq(void *ctx)
+{
+  struct context *ss_ctx = static_cast<struct context *>(ctx);
+
+  struct ibv_cq *cq = ss_ctx->cq;
+  struct ibv_wc wc;
+
+  while (1) {//! should_disconnect
+    TEST_NZ(ibv_get_cq_event(s_ctx->comp_channel, &cq, &ctx));
+    ibv_ack_cq_events(cq, 1);
+    TEST_NZ(ibv_req_notify_cq(cq, 0));
+
+    while (ibv_poll_cq(cq, 1, &wc)) {
+      if (wc.status == IBV_WC_SUCCESS)
+        s_on_completion_cb(&wc);
+      else
+        rc_die("poll_cq: status is not IBV_WC_SUCCESS");
+    }
+  }
+
+  return NULL;
+}
+
 void AbstractServer::build_params(struct rdma_conn_param *params)
 {
   memset(params, 0, sizeof(*params));
