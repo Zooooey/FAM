@@ -3,6 +3,7 @@
 #include <rdma/rdma_cma.h>
 #include <infiniband/verbs.h>
 #include <boost/program_options.hpp>
+#include "fam_common.hpp"
 
 class AbstractServer{
 
