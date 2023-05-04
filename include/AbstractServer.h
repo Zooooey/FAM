@@ -18,7 +18,7 @@ struct context
 
   pthread_t cq_poller_thread;
 };
-  static struct context *s_ctx = NULL;
+  static struct constexpr context *s_ctx = NULL;
   void build_params(struct rdma_conn_param *params);
   void build_connection(struct rdma_cm_id *id, bool is_qp0);
   void build_context(struct ibv_context *verbs);
