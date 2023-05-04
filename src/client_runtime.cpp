@@ -186,11 +186,13 @@ void on_completion(struct ibv_wc *wc)
           } else if (endsWith(cache_file_path, ".cache")) {
             BOOST_LOG_TRIVIAL(info)
             << "Cache file:"<<  cache_file_path <<". Using original cache mode!" << endl;
-            
+
             ctx->cacheMap = nullptr;
+			//FIXME: the const can't pass as non-const char*
             char* non_const_str = new char[strlen(cache_file_path) + 1]; // allocate buffer
             strcpy(non_const_str, cache_file_path); // copy string to buffer
-            ctx->cacheManager = new CacheManager(non_const_str);
+            ctx->cacheManager = new CacheManager(non_const_str, ctx->app->num_vertices);
+
             ctx->cacheManager->load(ctx->cache_ratio);
             BOOST_LOG_TRIVIAL(info)
             << "read_cache done! cache vertices count :" << ctx->cacheManager->cached_vertices_count() << endl;

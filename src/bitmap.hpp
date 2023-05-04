@@ -213,7 +213,6 @@ auto cache_pack_window(CacheMap *cache_map,CacheManager *cacheManager,
         in_cache = cache_elem != nullptr;
       }
 
-      // VertexEdges *ve = 
       if(cacheManager == nullptr){
         in_cache = false;
       }else {
@@ -544,7 +543,7 @@ namespace single_buffer {
         //for (uint32_t i = 0; i < cache_size; i++) { cache_hit_list[i] = nullptr; }
         // if vertex in cache, we don't send ramd request.
         clock_gettime(CLOCK_MONOTONIC, &t1);
-        auto const [next, wrs] = cache_pack_window<>(cache_map,cacheManager
+        auto const [next, wrs] = cache_pack_window<>(cache_map,cacheManager,
           //cache_hit_list,
           function,
           my_window,

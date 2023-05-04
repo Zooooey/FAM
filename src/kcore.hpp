@@ -79,7 +79,7 @@ public:
     };
     
     while (!frontier->is_empty()) {
-      famgraph::single_buffer::ccy_for_each_active_batch(cache_map, cacheManager
+      famgraph::single_buffer::ccy_for_each_active_batch(cache_map, cacheManager,
         *frontier, my_range, c, kcore_push);
       frontier->clear();
       std::swap(frontier, next_frontier);
