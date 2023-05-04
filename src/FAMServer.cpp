@@ -20,6 +20,7 @@
 #include "messages.hpp"
 #include "fam_common.hpp"
 #include "AbstractServer.h"
+#include "FAMServer.h"
 
 struct conn_context// consider renaming server context
 {
@@ -92,173 +93,171 @@ public:
   }
 };
 
-namespace{
+namespace {
 template<typename T> auto num_elements(boost::filesystem::path const &p)
-  {
-    const auto file_size = boost::filesystem::file_size(p);
-    const auto n = file_size / sizeof(T);
-    return n;
-  }
-  void FAMServer::post_receive(struct rdma_cm_id *id)
-  {
-    struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
-    struct ibv_recv_wr wr, *bad_wr = NULL;
-    struct ibv_sge sge;
+{
+  const auto file_size = boost::filesystem::file_size(p);
+  const auto n = file_size / sizeof(T);
+  return n;
+}
+void FAMServer::post_receive(struct rdma_cm_id *id)
+{
+  struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
+  struct ibv_recv_wr wr, *bad_wr = NULL;
+  struct ibv_sge sge;
 
-    memset(&wr, 0, sizeof(wr));
+  memset(&wr, 0, sizeof(wr));
 
-    wr.wr_id = reinterpret_cast<uintptr_t>(id);
-    wr.sg_list = &sge;
-    wr.num_sge = 1;
+  wr.wr_id = reinterpret_cast<uintptr_t>(id);
+  wr.sg_list = &sge;
+  wr.num_sge = 1;
 
-    sge.addr = reinterpret_cast<uintptr_t>(ctx->rx_msg);
-    sge.length = sizeof(*ctx->rx_msg);
-    sge.lkey = ctx->rx_msg_mr->lkey;
+  sge.addr = reinterpret_cast<uintptr_t>(ctx->rx_msg);
+  sge.length = sizeof(*ctx->rx_msg);
+  sge.lkey = ctx->rx_msg_mr->lkey;
 
-    TEST_NZ(ibv_post_recv(id->qp, &wr, &bad_wr));
-  }
-
-  auto get_edge_list(std::string adj_file, ibv_pd *pd, bool use_HP, int fam_thp_flag)
-  {
-    namespace fs = boost::filesystem;
-    BOOST_LOG_TRIVIAL(info) << "Reading adj file: " << adj_file;
-
-    fs::path p(adj_file);
-    if (!(fs::exists(p) && fs::is_regular_file(p)))
-      throw std::runtime_error(".adj file not found");
-
-    auto const edges_count = num_elements<uint32_t>(p);
-    BOOST_LOG_TRIVIAL(info) << "adj file edges count: " << edges_count;
-    auto ptr =
-      famgraph::RDMA_mmap_unique<uint32_t>(edges_count, pd, use_HP, fam_thp_flag);
-    auto array = reinterpret_cast<char *>(ptr.get());
-    auto const filesize = edges_count * sizeof(uint32_t);
-    file_mapper get_mapped_chunk{ adj_file, filesize, use_HP };
-
-    while (get_mapped_chunk.has_next()) {
-      auto const [fptr, len] = get_mapped_chunk();
-      std::memcpy(array, fptr.get(), len);
-      array += len;
-      std::cout << "#" << std::flush;
-    }
-
-    auto mr = ptr.get_deleter().mr;
-    return std::make_tuple(std::move(ptr), mr, edges_count);
-  }
-
-  void send_message(struct rdma_cm_id *id)
-  {
-    struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
-
-    struct ibv_send_wr wr, *bad_wr = NULL;
-    struct ibv_sge sge;
-
-    memset(&wr, 0, sizeof(wr));
-
-    wr.wr_id = reinterpret_cast<uintptr_t>(id);
-    wr.opcode = IBV_WR_SEND;
-    wr.sg_list = &sge;
-    wr.num_sge = 1;
-    wr.send_flags = IBV_SEND_SIGNALED;
-
-    sge.addr = reinterpret_cast<uintptr_t>(ctx->tx_msg);
-    sge.length = sizeof(*ctx->tx_msg);
-    sge.lkey = ctx->tx_msg_mr->lkey;
-
-    TEST_NZ(ibv_post_send(id->qp, &wr, &bad_wr));
-  }
-  
-  static void validate_params(boost::program_options::variables_map const &vm)
-  {
-    if (!vm.count("server-addr"))
-      throw boost::program_options::validation_error(
-        boost::program_options::validation_error::invalid_option_value, "server-addr");
-    if (!vm.count("port"))
-      throw boost::program_options::validation_error(
-        boost::program_options::validation_error::invalid_option_value, "port");
-    if (!vm.count("edgefile"))
-      throw boost::program_options::validation_error(
-        boost::program_options::validation_error::invalid_option_value, "edgefile");
-  }
+  TEST_NZ(ibv_post_recv(id->qp, &wr, &bad_wr));
 }
 
+auto get_edge_list(std::string adj_file, ibv_pd *pd, bool use_HP, int fam_thp_flag)
+{
+  namespace fs = boost::filesystem;
+  BOOST_LOG_TRIVIAL(info) << "Reading adj file: " << adj_file;
 
-  FAMServer::FAMServer() { }
+  fs::path p(adj_file);
+  if (!(fs::exists(p) && fs::is_regular_file(p)))
+    throw std::runtime_error(".adj file not found");
 
-  void FAMServer::on_pre_conn(struct rdma_cm_id *id) 
-  {
-    BOOST_LOG_TRIVIAL(debug) << "precon";
-    struct conn_context *ctx = g_ctx;// find a better way later
+  auto const edges_count = num_elements<uint32_t>(p);
+  BOOST_LOG_TRIVIAL(info) << "adj file edges count: " << edges_count;
+  auto ptr = famgraph::RDMA_mmap_unique<uint32_t>(edges_count, pd, use_HP, fam_thp_flag);
+  auto array = reinterpret_cast<char *>(ptr.get());
+  auto const filesize = edges_count * sizeof(uint32_t);
+  file_mapper get_mapped_chunk{ adj_file, filesize, use_HP };
 
-    id->context = ctx;
+  while (get_mapped_chunk.has_next()) {
+    auto const [fptr, len] = get_mapped_chunk();
+    std::memcpy(array, fptr.get(), len);
+    array += len;
+    std::cout << "#" << std::flush;
+  }
 
-    if (posix_memalign(reinterpret_cast<void **>(&ctx->tx_msg),
-          static_cast<size_t>(sysconf(_SC_PAGESIZE)),
-          sizeof(*ctx->tx_msg))) {
-      throw std::runtime_error("posix memalign failed");
+  auto mr = ptr.get_deleter().mr;
+  return std::make_tuple(std::move(ptr), mr, edges_count);
+}
+
+void send_message(struct rdma_cm_id *id)
+{
+  struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
+
+  struct ibv_send_wr wr, *bad_wr = NULL;
+  struct ibv_sge sge;
+
+  memset(&wr, 0, sizeof(wr));
+
+  wr.wr_id = reinterpret_cast<uintptr_t>(id);
+  wr.opcode = IBV_WR_SEND;
+  wr.sg_list = &sge;
+  wr.num_sge = 1;
+  wr.send_flags = IBV_SEND_SIGNALED;
+
+  sge.addr = reinterpret_cast<uintptr_t>(ctx->tx_msg);
+  sge.length = sizeof(*ctx->tx_msg);
+  sge.lkey = ctx->tx_msg_mr->lkey;
+
+  TEST_NZ(ibv_post_send(id->qp, &wr, &bad_wr));
+}
+
+static void validate_params(boost::program_options::variables_map const &vm)
+{
+  if (!vm.count("server-addr"))
+    throw boost::program_options::validation_error(
+      boost::program_options::validation_error::invalid_option_value, "server-addr");
+  if (!vm.count("port"))
+    throw boost::program_options::validation_error(
+      boost::program_options::validation_error::invalid_option_value, "port");
+  if (!vm.count("edgefile"))
+    throw boost::program_options::validation_error(
+      boost::program_options::validation_error::invalid_option_value, "edgefile");
+}
+}// namespace
+
+
+FAMServer::FAMServer() {}
+
+void FAMServer::on_pre_conn(struct rdma_cm_id *id)
+{
+  BOOST_LOG_TRIVIAL(debug) << "precon";
+  struct conn_context *ctx = g_ctx;// find a better way later
+
+  id->context = ctx;
+
+  if (posix_memalign(reinterpret_cast<void **>(&ctx->tx_msg),
+        static_cast<size_t>(sysconf(_SC_PAGESIZE)),
+        sizeof(*ctx->tx_msg))) {
+    throw std::runtime_error("posix memalign failed");
+  }
+
+  TEST_Z(ctx->tx_msg_mr = ibv_reg_mr(rc_get_pd(), ctx->tx_msg, sizeof(*ctx->tx_msg), 0));
+
+  if (posix_memalign(reinterpret_cast<void **>(&ctx->rx_msg),
+        static_cast<size_t>(sysconf(_SC_PAGESIZE)),
+        sizeof(*ctx->rx_msg))) {
+    throw std::runtime_error("posix memalign failed");
+  }
+  TEST_Z(ctx->rx_msg_mr = ibv_reg_mr(
+           rc_get_pd(), ctx->rx_msg, sizeof(*ctx->rx_msg), IBV_ACCESS_LOCAL_WRITE));
+
+  post_receive(id);
+}
+void FAMServer::on_connection(struct rdma_cm_id *id)
+{
+  BOOST_LOG_TRIVIAL(debug) << "on connection";
+  struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
+
+  auto [ptr, mr, edges] =
+    get_edge_list(ctx->adj_filename, rc_get_pd(), ctx->use_hp, ctx->fam_thp_flag);
+  ctx->v.emplace_back(std::move(ptr));
+
+  ctx->tx_msg->id = MSG_MR;
+  ctx->tx_msg->data.mr.addr = reinterpret_cast<uintptr_t>(mr->addr);
+  ctx->tx_msg->data.mr.rkey = mr->rkey;
+  ctx->tx_msg->data.mr.total_edges = edges;
+
+  send_message(id);
+}
+void FAMServer::on_completion(struct ibv_wc *wc)
+{
+  BOOST_LOG_TRIVIAL(debug) << "completion";
+  struct rdma_cm_id *id = reinterpret_cast<struct rdma_cm_id *>(wc->wr_id);
+  struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
+
+  if (wc->opcode & IBV_WC_RECV) {
+    if (ctx->rx_msg->id == MSG_READY) {
+      post_receive(id);
+      BOOST_LOG_TRIVIAL(debug) << "received READY";
+      ctx->tx_msg->id = MSG_DONE;
+      send_message(id);
+    } else if (ctx->rx_msg->id == MSG_DONE) {// server never receives this
+      printf("received DONE\n");
+      post_receive(id);
+      ctx->tx_msg->id = MSG_DONE;
+      send_message(id);
+      // rc_disconnect(id);//should never recv this...
+      return;
     }
-
-    TEST_Z(
-      ctx->tx_msg_mr = ibv_reg_mr(rc_get_pd(), ctx->tx_msg, sizeof(*ctx->tx_msg), 0));
-
-    if (posix_memalign(reinterpret_cast<void **>(&ctx->rx_msg),
-          static_cast<size_t>(sysconf(_SC_PAGESIZE)),
-          sizeof(*ctx->rx_msg))) {
-      throw std::runtime_error("posix memalign failed");
-    }
-    TEST_Z(ctx->rx_msg_mr = ibv_reg_mr(
-             rc_get_pd(), ctx->rx_msg, sizeof(*ctx->rx_msg), IBV_ACCESS_LOCAL_WRITE));
-
-    post_receive(id);
   }
-  void FAMServer::on_connection(struct rdma_cm_id *id) 
-  {
-    BOOST_LOG_TRIVIAL(debug) << "on connection";
-    struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
+}
+void FAMServer::on_disconnect(struct rdma_cm_id *id)
+{
+  struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
 
-    auto [ptr, mr, edges] =
-      get_edge_list(ctx->adj_filename, rc_get_pd(), ctx->use_hp, ctx->fam_thp_flag);
-    ctx->v.emplace_back(std::move(ptr));
-
-    ctx->tx_msg->id = MSG_MR;
-    ctx->tx_msg->data.mr.addr = reinterpret_cast<uintptr_t>(mr->addr);
-    ctx->tx_msg->data.mr.rkey = mr->rkey;
-    ctx->tx_msg->data.mr.total_edges = edges;
-
-    send_message(id);
-  }
-  void FAMServer::on_completion(struct ibv_wc *wc) 
-  {
-    BOOST_LOG_TRIVIAL(debug) << "completion";
-    struct rdma_cm_id *id = reinterpret_cast<struct rdma_cm_id *>(wc->wr_id);
-    struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
-
-    if (wc->opcode & IBV_WC_RECV) {
-      if (ctx->rx_msg->id == MSG_READY) {
-        post_receive(id);
-        BOOST_LOG_TRIVIAL(debug) << "received READY";
-        ctx->tx_msg->id = MSG_DONE;
-        send_message(id);
-      } else if (ctx->rx_msg->id == MSG_DONE) {// server never receives this
-        printf("received DONE\n");
-        post_receive(id);
-        ctx->tx_msg->id = MSG_DONE;
-        send_message(id);
-        // rc_disconnect(id);//should never recv this...
-        return;
-      }
-    }
-  }
-  void FAMServer::on_disconnect(struct rdma_cm_id *id) 
-  {
-    struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
-
-    ibv_dereg_mr(ctx->rx_msg_mr);
-    ibv_dereg_mr(ctx->tx_msg_mr);
-    free(ctx->rx_msg);
-    free(ctx->tx_msg);
-  }
-void FAMServer::run(boost::program_options::variables_map const &vm) 
+  ibv_dereg_mr(ctx->rx_msg_mr);
+  ibv_dereg_mr(ctx->tx_msg_mr);
+  free(ctx->rx_msg);
+  free(ctx->tx_msg);
+}
+void FAMServer::run(boost::program_options::variables_map const &vm)
 {
   // 校验参数
   validate_params(vm);
@@ -282,11 +281,11 @@ void FAMServer::run(boost::program_options::variables_map const &vm)
   ctx.use_hp = vm.count("hp") ? true : false;
   ctx.fam_thp_flag = vm["madvise_thp"].as<uint32_t>();
   BOOST_LOG_TRIVIAL(info) << "hugepages? " << ctx.use_hp;
- 
+
   BOOST_LOG_TRIVIAL(info) << "waiting for connections. interrupt (^C) to exit.";
 
-  
-  //loop
+
+  // loop
   struct sockaddr_in6 addr;
   struct rdma_cm_id *listener = NULL;
   struct rdma_event_channel *ec = NULL;
@@ -305,8 +304,3 @@ void FAMServer::run(boost::program_options::variables_map const &vm)
   rdma_destroy_id(listener);
   rdma_destroy_event_channel(ec);
 }
-
-
-
-
-
