@@ -4,7 +4,7 @@
 #include <infiniband/verbs.h>
 #include <boost/program_options.hpp>
 
-constexpr int TIMEOUT_IN_MS = 500;
+#define TIMEOUT_IN_MS 500;
 class AbstractServer{
 
 protected:
