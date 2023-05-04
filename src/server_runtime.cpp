@@ -27,7 +27,7 @@ struct conn_context// consider renaming server context
   std::vector<std::unique_ptr<uint32_t, famgraph::RDMA_mmap_deleter>> v;
 
   struct message *tx_msg;
-  struct ibv_mr *tx_msg_mr;fam_thp_flag
+  struct ibv_mr *tx_msg_mr;
 
   struct message *rx_msg;
   struct ibv_mr *rx_msg_mr;
