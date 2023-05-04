@@ -92,20 +92,14 @@ public:
   }
 };
 
-
-class FAMServer : public AbstractServer
-{
-private:
-  struct conn_context *g_ctx = 0;
-  boost::program_options::variables_map *vm;
-
-  template<typename T> auto num_elements(boost::filesystem::path const &p)
+namespace{
+template<typename T> auto num_elements(boost::filesystem::path const &p)
   {
     const auto file_size = boost::filesystem::file_size(p);
     const auto n = file_size / sizeof(T);
     return n;
   }
-  void post_receive(struct rdma_cm_id *id)
+  void FAMServer::post_receive(struct rdma_cm_id *id)
   {
     struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
     struct ibv_recv_wr wr, *bad_wr = NULL;
@@ -173,8 +167,7 @@ private:
 
     TEST_NZ(ibv_post_send(id->qp, &wr, &bad_wr));
   }
-
-public:
+  
   static void validate_params(boost::program_options::variables_map const &vm)
   {
     if (!vm.count("server-addr"))
@@ -187,11 +180,12 @@ public:
       throw boost::program_options::validation_error(
         boost::program_options::validation_error::invalid_option_value, "edgefile");
   }
+}
 
 
-  FAMServer() { }
+  FAMServer::FAMServer() { }
 
-  void on_pre_conn(struct rdma_cm_id *id) 
+  void FAMServer::on_pre_conn(struct rdma_cm_id *id) 
   {
     BOOST_LOG_TRIVIAL(debug) << "precon";
     struct conn_context *ctx = g_ctx;// find a better way later
@@ -217,7 +211,7 @@ public:
 
     post_receive(id);
   }
-  void on_connection(struct rdma_cm_id *id) 
+  void FAMServer::on_connection(struct rdma_cm_id *id) 
   {
     BOOST_LOG_TRIVIAL(debug) << "on connection";
     struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
@@ -233,7 +227,7 @@ public:
 
     send_message(id);
   }
-  void on_completion(struct ibv_wc *wc) 
+  void FAMServer::on_completion(struct ibv_wc *wc) 
   {
     BOOST_LOG_TRIVIAL(debug) << "completion";
     struct rdma_cm_id *id = reinterpret_cast<struct rdma_cm_id *>(wc->wr_id);
@@ -255,7 +249,7 @@ public:
       }
     }
   }
-  void on_disconnect(struct rdma_cm_id *id) 
+  void FAMServer::on_disconnect(struct rdma_cm_id *id) 
   {
     struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
 
@@ -264,7 +258,7 @@ public:
     free(ctx->rx_msg);
     free(ctx->tx_msg);
   }
-void run(boost::program_options::variables_map const &vm) 
+void FAMServer::run(boost::program_options::variables_map const &vm) 
 {
   // 校验参数
   validate_params(vm);
@@ -312,7 +306,7 @@ void run(boost::program_options::variables_map const &vm)
   rdma_destroy_event_channel(ec);
 }
 
-};
+
 
 
 
