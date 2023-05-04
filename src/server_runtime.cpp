@@ -25,7 +25,7 @@
 
 
 namespace s_runtime{
-
+  struct conn_context *g_ctx = 0;
 
 void validate_params(boost::program_options::variables_map const &vm)
 {
@@ -186,7 +186,7 @@ void post_receive(struct rdma_cm_id *id)
   TEST_NZ(ibv_post_recv(id->qp, &wr, &bad_wr));
 }
 
-class FAMServer :public AbstractServer{
+/*class FAMServer :public AbstractServer{
 private:
   struct conn_context *g_ctx = 0;
 
@@ -264,7 +264,7 @@ public:
   free(ctx->rx_msg);
   free(ctx->tx_msg);
 }
-};
+};*/
 
   void on_pre_conn(struct rdma_cm_id *id) {
       BOOST_LOG_TRIVIAL(debug) << "precon";
@@ -357,7 +357,8 @@ void run_server(boost::program_options::variables_map const &vm)
   ctx.use_hp = vm.count("hp") ? true : false;
   ctx.fam_thp_flag = vm["madvise_thp"].as<uint32_t>();
   BOOST_LOG_TRIVIAL(info) << "hugepages? " << ctx.use_hp;
-  s_runtime::FAMServer server(&ctx);
+  //s_runtime::FAMServer server(&ctx);
+  g_ctx = &ctx;
 
   rc_init(on_pre_conn, on_connection, on_completion, on_disconnect);
 
