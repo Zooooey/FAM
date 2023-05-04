@@ -218,7 +218,7 @@ void *poll_cq(void *ctx)
   struct ibv_wc wc;
 
   while (1) {//! should_disconnect
-    TEST_NZ(ibv_get_cq_event(s_ctx->comp_channel, &cq, reinterpret_cast<void**>(&ctx)));
+    TEST_NZ(ibv_get_cq_event(s_ctx->comp_channel, &cq, &ctx));
     ibv_ack_cq_events(cq, 1);
     TEST_NZ(ibv_req_notify_cq(cq, 0));
 

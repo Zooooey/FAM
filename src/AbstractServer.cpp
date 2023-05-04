@@ -20,7 +20,7 @@ void * AbstractServer::poll_cq(void *arg)
   struct ibv_wc wc;
 
   while (1) {//! should_disconnect
-    TEST_NZ(ibv_get_cq_event(ss_ctx->comp_channel, &cq, static_cast<void**>(&(instance->s_ctx))));
+    TEST_NZ(ibv_get_cq_event(ss_ctx->comp_channel, &cq, reinterpret_cast <void**>(&(instance->s_ctx))));
     ibv_ack_cq_events(cq, 1);
     TEST_NZ(ibv_req_notify_cq(cq, 0));
 
