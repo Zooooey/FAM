@@ -186,7 +186,8 @@ void AbstractServer::event_loop(struct rdma_event_channel *ec, int exit_on_disco
       BOOST_LOG_TRIVIAL(debug) << "CLIENT1";
 
       if (!latch0) on_pre_conn(event_copy.id);
-      TEST_NZ(rdma_resolve_route(event_copy.id, TIMEOUT_IN_MS));
+      static long TIMEOUT = 500;
+      TEST_NZ(rdma_resolve_route(event_copy.id, TIMEOUT));
       latch0 = true;
     } else if (event_copy.event == RDMA_CM_EVENT_ROUTE_RESOLVED) {// Runs on client
       TEST_NZ(rdma_connect(event_copy.id, &cm_params));
