@@ -5,6 +5,7 @@
 
   
 class AbstractServer{
+public:
   virtual void on_pre_conn(struct rdma_cm_id *id) = 0;
   virtual void on_connection(struct rdma_cm_id *id) = 0;
   virtual void on_completion(struct ibv_wc *wc) = 0;
