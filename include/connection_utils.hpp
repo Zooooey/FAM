@@ -25,7 +25,7 @@ struct ibv_pd * rc_get_pd();
 unsigned long rc_get_num_connections();
 
 void rc_server_loop(const char *port);
-void rc_server_loop(const char *port, AbstractServer * server);
+//void rc_server_loop(const char *port, AbstractServer * server);
 
 constexpr int TIMEOUT_IN_MS = 500;
 
