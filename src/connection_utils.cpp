@@ -24,6 +24,7 @@ static disconnect_cb_fn s_on_disconnect_cb = NULL;
 static void build_context(struct ibv_context *verbs);
 static void build_qp_attr(struct ibv_qp_init_attr *qp_attr, bool is_qp0);
 static void event_loop(struct rdma_event_channel *ec, int exit_on_disconnect);
+static void event_loop(struct rdma_event_channel *ec, int exit_on_disconnect, AbstractServer* server);
 static void *poll_cq(void *);
 
 unsigned long rc_get_num_connections() { return s_ctx->connections; }
@@ -148,7 +149,7 @@ std::string cm_event_to_string(rdma_cm_event_type e)
 }
 }// namespace
 
-//An event_loop both being used in server and client
+//FIXME: merge it!!
 void event_loop(struct rdma_event_channel *ec, int exit_on_disconnect)
 {
   struct rdma_cm_event *event = NULL;
@@ -197,6 +198,64 @@ void event_loop(struct rdma_event_channel *ec, int exit_on_disconnect)
       BOOST_LOG_TRIVIAL(info) << "Connection disconnected, id:"<<event_copy.id;
       if (s_on_disconnect_cb && !latch4) s_on_disconnect_cb(event_copy.id);
 
+      rdma_destroy_id(event_copy.id);
+
+      if (exit_on_disconnect) break;
+      latch4 = true;
+    } else {
+      BOOST_LOG_TRIVIAL(fatal) << cm_event_to_string(event_copy.event);
+      throw std::runtime_error("RDMA event not handled");
+    }
+  }
+}
+
+//An event_loop both being used in server and client
+void event_loop(struct rdma_event_channel *ec, int exit_on_disconnect, AbstractServer* server)
+{
+  struct rdma_cm_event *event = NULL;
+  struct rdma_conn_param cm_params;
+
+  build_params(&cm_params);
+
+  // only run custom handlers on connection 0
+  bool latch0 = false;
+  // bool latch1 = false;
+  bool latch2 = false;
+  bool latch3 = false;
+  bool latch4 = false;
+
+  while (rdma_get_cm_event(ec, &event) == 0) {
+    struct rdma_cm_event event_copy;
+
+    memcpy(&event_copy, event, sizeof(*event));
+    rdma_ack_cm_event(event);
+
+    if (event_copy.event == RDMA_CM_EVENT_ADDR_RESOLVED) {// Runs on client
+      build_connection(event_copy.id, !latch0);
+      BOOST_LOG_TRIVIAL(debug) << "CLIENT1";
+
+      if (!latch0) server->on_pre_conn(event_copy.id);
+      TEST_NZ(rdma_resolve_route(event_copy.id, TIMEOUT_IN_MS));
+      latch0 = true;
+    } else if (event_copy.event == RDMA_CM_EVENT_ROUTE_RESOLVED) {// Runs on client
+      TEST_NZ(rdma_connect(event_copy.id, &cm_params));
+      BOOST_LOG_TRIVIAL(debug) << "CLIENT2";
+    } else if (event_copy.event == RDMA_CM_EVENT_CONNECT_REQUEST) {// Runs on server
+      build_connection(event_copy.id, !latch2);
+      BOOST_LOG_TRIVIAL(info) << "RDMA_CM Connect request received!";
+      if (!latch2)server->on_pre_conn(event_copy.id);
+
+      TEST_NZ(rdma_accept(event_copy.id, &cm_params));
+      latch2 = true;
+    } else if (event_copy.event == RDMA_CM_EVENT_ESTABLISHED) {// Runs on both
+      if(!latch3) server->on_connect_cb(event_copy.id);
+      BOOST_LOG_TRIVIAL(info) << "RDMA_CM Established, id:"<<event_copy.id;
+      latch3 = true;
+      s_ctx->connections++;
+    } else if (event_copy.event == RDMA_CM_EVENT_DISCONNECTED) {// Runs on both
+      rdma_destroy_qp(event_copy.id);
+      BOOST_LOG_TRIVIAL(info) << "Connection disconnected, id:"<<event_copy.id;
+      if(!latch4) server->on_disconnect_cb(event_copy.id);
       rdma_destroy_id(event_copy.id);
 
       if (exit_on_disconnect) break;
@@ -272,7 +331,7 @@ void rc_client_loop(const char *host, const char *port, struct client_context *c
   rdma_destroy_event_channel(ec);
 }
 
-void rc_server_loop(const char *port)
+void rc_server_loop(const char *port, FAMServer *server);
 {
   struct sockaddr_in6 addr;
   struct rdma_cm_id *listener = NULL;
@@ -287,7 +346,7 @@ void rc_server_loop(const char *port)
   TEST_NZ(rdma_bind_addr(listener, reinterpret_cast<struct sockaddr *>(&addr)));
   TEST_NZ(rdma_listen(listener, 10)); /* backlog=10 is arbitrary */
 
-  event_loop(ec, 0);// exit on disconnect
+  event_loop(ec, 0, server);// exit on disconnect
 
   rdma_destroy_id(listener);
   rdma_destroy_event_channel(ec);
