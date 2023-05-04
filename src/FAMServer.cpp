@@ -168,7 +168,7 @@ void send_message(struct rdma_cm_id *id)
   TEST_NZ(ibv_post_send(id->qp, &wr, &bad_wr));
 }
 
-static void validate_params(boost::program_options::variables_map const &vm)
+ void validate_params(boost::program_options::variables_map const &vm)
 {
   if (!vm.count("server-addr"))
     throw boost::program_options::validation_error(
