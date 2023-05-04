@@ -40,7 +40,26 @@ void validate_params(boost::program_options::variables_map const &vm)
       boost::program_options::validation_error::invalid_option_value, "edgefile");
 }
 
+struct conn_context// consider renaming server context
+{
+  std::string adj_filename;
+  std::vector<std::unique_ptr<uint32_t, famgraph::RDMA_mmap_deleter>> v;
 
+  struct message *tx_msg;
+  struct ibv_mr *tx_msg_mr;
+
+  struct message *rx_msg;
+  struct ibv_mr *rx_msg_mr;
+
+  bool use_hp{ false };
+
+  int fam_thp_flag{ 0 };
+
+  conn_context(std::string const &file) : adj_filename{ file } {}
+
+  conn_context &operator=(const conn_context &) = delete;
+  conn_context(const conn_context &) = delete;
+};
 
 template<typename T> auto num_elements(boost::filesystem::path const &p)
 {
@@ -170,11 +189,13 @@ void post_receive(struct rdma_cm_id *id)
 class FAMServer :public AbstractServer{
 private:
   struct conn_context *g_ctx = 0;
+
+
+public:
   FAMServer(conn_context* ctx){
     this->g_ctx = ctx;
   }
-
-public:
+  
   void on_pre_conn(struct rdma_cm_id *id) override{
      BOOST_LOG_TRIVIAL(debug) << "precon";
   struct conn_context *ctx = g_ctx;// find a better way later
@@ -245,29 +266,8 @@ public:
 }
 };
 
-
 }// namespace
 
-struct conn_context// consider renaming server context
-{
-  std::string adj_filename;
-  std::vector<std::unique_ptr<uint32_t, famgraph::RDMA_mmap_deleter>> v;
-
-  struct message *tx_msg;
-  struct ibv_mr *tx_msg_mr;
-
-  struct message *rx_msg;
-  struct ibv_mr *rx_msg_mr;
-
-  bool use_hp{ false };
-
-  int fam_thp_flag{ 0 };
-
-  conn_context(std::string const &file) : adj_filename{ file } {}
-
-  conn_context &operator=(const conn_context &) = delete;
-  conn_context(const conn_context &) = delete;
-};
 
 void run_server(boost::program_options::variables_map const &vm)
 {
@@ -284,12 +284,12 @@ void run_server(boost::program_options::variables_map const &vm)
 
   BOOST_LOG_TRIVIAL(info) << "Reading in edgelist";
 
-  struct conn_context ctx{file};
+  struct s_runtime::conn_context ctx{file};
   //判断有没有在参数里指定使用大页
   ctx.use_hp = vm.count("hp") ? true : false;
   ctx.fam_thp_flag = vm["madvise_thp"].as<uint32_t>();
   BOOST_LOG_TRIVIAL(info) << "hugepages? " << ctx.use_hp;
-  FAMServer server(&ctx);
+  s_runtime::FAMServer server(&ctx);
 
   //rc_init(on_pre_conn, on_connection, on_completion, on_disconnect);
 
