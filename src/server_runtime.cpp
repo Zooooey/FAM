@@ -25,7 +25,7 @@
 class FAMServer :public AbstractServer{
 private:
   struct conn_context *g_ctx = 0;
-  FAMServer::FAMServer(conn_context* ctx){
+  FAMServer(conn_context* ctx){
     this->g_ctx = ctx;
   }
 
@@ -89,7 +89,7 @@ public:
     }
   }
 }
-  void on_disconnect(struct rdma_cm_id *id) overridevoid on_disconnect(struct rdma_cm_id *id)
+  void on_disconnect(struct rdma_cm_id *id) override
 {
   struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
 
