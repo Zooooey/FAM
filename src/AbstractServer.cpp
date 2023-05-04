@@ -9,21 +9,24 @@ void AbstractServer::rc_die(const char *reason)
   exit(EXIT_FAILURE);
 }
 
-void * AbstractServer::poll_cq(void *ctx)
+void * AbstractServer::poll_cq(void *arg)
 {
-  struct context *ss_ctx = static_cast<struct context *>(ctx);
+
+  AbstractServer* instance = static_cast<AbstractServer*>(arg);
+
+  struct context *ss_ctx = static_cast<struct context *>(instance->s_ctx);
 
   struct ibv_cq *cq = ss_ctx->cq;
   struct ibv_wc wc;
 
   while (1) {//! should_disconnect
-    TEST_NZ(ibv_get_cq_event(AbstractServer::s_ctx->comp_channel, &cq, &ctx));
+    TEST_NZ(ibv_get_cq_event(s_ctx->comp_channel, &cq, &(instance->s_ctx)));
     ibv_ack_cq_events(cq, 1);
     TEST_NZ(ibv_req_notify_cq(cq, 0));
 
     while (ibv_poll_cq(cq, 1, &wc)) {
       if (wc.status == IBV_WC_SUCCESS)
-        on_completion(&wc);
+        instance->on_completion(&wc);
       else
         rc_die("poll_cq: status is not IBV_WC_SUCCESS");
     }
@@ -47,7 +50,7 @@ void AbstractServer::build_connection(struct rdma_cm_id *id, bool is_qp0)
   build_context(id->verbs);// guaranteed to only go thru on qp0
   build_qp_attr(&qp_attr, is_qp0);// do special handling on qp > 0
 
-  TEST_NZ(rdma_create_qp(id, AbstractServer::s_ctx->pd, &qp_attr));
+  TEST_NZ(rdma_create_qp(id, s_ctx->pd, &qp_attr));
 }
 
 
@@ -56,8 +59,8 @@ void AbstractServer::build_qp_attr(struct ibv_qp_init_attr *qp_attr, bool is_qp0
   memset(qp_attr, 0, sizeof(*qp_attr));
 
   if (is_qp0) {
-    qp_attr->send_cq = AbstractServer::s_ctx->cq;// index into cq array /or just make a new qp
-    qp_attr->recv_cq = AbstractServer::s_ctx->cq;// reuse from above
+    qp_attr->send_cq = s_ctx->cq;// index into cq array /or just make a new qp
+    qp_attr->recv_cq = s_ctx->cq;// reuse from above
   } else {
     // struct ibv_cq * cq;
     // TEST_Z(cq = ibv_create_cq(s_ctx->ctx, 10, NULL, NULL, 0)); /* cqe=10 is arbitrary
@@ -77,23 +80,23 @@ void AbstractServer::build_qp_attr(struct ibv_qp_init_attr *qp_attr, bool is_qp0
 void AbstractServer::build_context(struct ibv_context *verbs)
 {
   if (s_ctx) {
-    if (AbstractServer::s_ctx->ctx != verbs) rc_die("cannot handle events in more than one context.");
+    if (s_ctx->ctx != verbs) rc_die("cannot handle events in more than one context.");
 
     return;
   }
 
   s_ctx = static_cast<struct context *>(malloc(sizeof(struct context)));
 
-  AbstractServer::s_ctx->ctx = verbs;
-  AbstractServer::s_ctx->connections = 0;
+  s_ctx->ctx = verbs;
+  s_ctx->connections = 0;
 
-  TEST_Z(AbstractServer::s_ctx->pd = ibv_alloc_pd(AbstractServer::s_ctx->ctx));
-  TEST_Z(AbstractServer::s_ctx->comp_channel = ibv_create_comp_channel(AbstractServer::s_ctx->ctx));
-  TEST_Z(AbstractServer::s_ctx->cq = ibv_create_cq(
-           AbstractServer::s_ctx->ctx, 10, NULL, AbstractServer::s_ctx->comp_channel, 0)); /* cqe=10 is arbitrary */
-  TEST_NZ(ibv_req_notify_cq(AbstractServer::s_ctx->cq, 0));// can flip to solicited only
+  TEST_Z(s_ctx->pd = ibv_alloc_pd(s_ctx->ctx));
+  TEST_Z(s_ctx->comp_channel = ibv_create_comp_channel(s_ctx->ctx));
+  TEST_Z(s_ctx->cq = ibv_create_cq(
+           s_ctx->ctx, 10, NULL, s_ctx->comp_channel, 0)); /* cqe=10 is arbitrary */
+  TEST_NZ(ibv_req_notify_cq(s_ctx->cq, 0));// can flip to solicited only
 
-  TEST_NZ(pthread_create(&AbstractServer::s_ctx->cq_poller_thread, NULL, poll_cq, s_ctx));
+  TEST_NZ(pthread_create(&s_ctx->cq_poller_thread, NULL, poll_cq, this));
 }
 
 //An event_loop both being used in server and client
@@ -138,7 +141,7 @@ void AbstractServer::event_loop(struct rdma_event_channel *ec, int exit_on_disco
       if(!latch3) on_connection(event_copy.id);
       BOOST_LOG_TRIVIAL(info) << "RDMA_CM Established, id:"<<event_copy.id;
       latch3 = true;
-      AbstractServer::s_ctx->connections++;
+      s_ctx->connections++;
     } else if (event_copy.event == RDMA_CM_EVENT_DISCONNECTED) {// Runs on both
       rdma_destroy_qp(event_copy.id);
       BOOST_LOG_TRIVIAL(info) << "Connection disconnected, id:"<<event_copy.id;
