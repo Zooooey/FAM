@@ -22,7 +22,7 @@
 #include "AbstractServer.h"
 #include "FAMServer.h"
 
-struct conn_context// consider renaming server context
+struct server_context// consider renaming server context
 {
   std::string adj_filename;
   std::vector<std::unique_ptr<uint32_t, famgraph::RDMA_mmap_deleter>> v;
@@ -37,10 +37,10 @@ struct conn_context// consider renaming server context
 
   int fam_thp_flag{ 0 };
 
-  conn_context(std::string const &file) : adj_filename{ file } {}
+  server_context(std::string const &file) : adj_filename{ file } {}
 
-  conn_context &operator=(const conn_context &) = delete;
-  conn_context(const conn_context &) = delete;
+  server_context &operator=(const server_context &) = delete;
+  server_context(const server_context &) = delete;
 };
 
 
@@ -102,7 +102,7 @@ template<typename T> auto num_elements(boost::filesystem::path const &p)
 }
 void post_receive(struct rdma_cm_id *id)
 {
-  struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
+  struct server_context *ctx = static_cast<struct server_context *>(id->context);
   struct ibv_recv_wr wr, *bad_wr = NULL;
   struct ibv_sge sge;
 
@@ -148,7 +148,7 @@ auto get_edge_list(std::string adj_file, ibv_pd *pd, bool use_HP, int fam_thp_fl
 
 void send_message(struct rdma_cm_id *id)
 {
-  struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
+  struct server_context *ctx = static_cast<struct server_context *>(id->context);
 
   struct ibv_send_wr wr, *bad_wr = NULL;
   struct ibv_sge sge;
@@ -188,7 +188,7 @@ FAMServer::FAMServer() {}
 void FAMServer::on_pre_conn(struct rdma_cm_id *id)
 {
   BOOST_LOG_TRIVIAL(debug) << "precon";
-  struct conn_context *ctx = g_ctx;// find a better way later
+  struct server_context *ctx = g_ctx;// find a better way later
 
   id->context = ctx;
 
@@ -198,7 +198,7 @@ void FAMServer::on_pre_conn(struct rdma_cm_id *id)
     throw std::runtime_error("posix memalign failed");
   }
 
-  TEST_Z(ctx->tx_msg_mr = ibv_reg_mr(rc_get_pd(), ctx->tx_msg, sizeof(*ctx->tx_msg), 0));
+  TEST_Z(ctx->tx_msg_mr = ibv_reg_mr(s_ctx->pd, ctx->tx_msg, sizeof(*ctx->tx_msg), 0));
 
   if (posix_memalign(reinterpret_cast<void **>(&ctx->rx_msg),
         static_cast<size_t>(sysconf(_SC_PAGESIZE)),
@@ -206,17 +206,17 @@ void FAMServer::on_pre_conn(struct rdma_cm_id *id)
     throw std::runtime_error("posix memalign failed");
   }
   TEST_Z(ctx->rx_msg_mr = ibv_reg_mr(
-           rc_get_pd(), ctx->rx_msg, sizeof(*ctx->rx_msg), IBV_ACCESS_LOCAL_WRITE));
+           s_ctx->pd, ctx->rx_msg, sizeof(*ctx->rx_msg), IBV_ACCESS_LOCAL_WRITE));
 
   post_receive(id);
 }
 void FAMServer::on_connection(struct rdma_cm_id *id)
 {
   BOOST_LOG_TRIVIAL(debug) << "on connection";
-  struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
+  struct server_context *ctx = static_cast<struct server_context *>(id->context);
 
   auto [ptr, mr, edges] =
-    get_edge_list(ctx->adj_filename, rc_get_pd(), ctx->use_hp, ctx->fam_thp_flag);
+    get_edge_list(ctx->adj_filename, s_ctx->pd, ctx->use_hp, ctx->fam_thp_flag);
   ctx->v.emplace_back(std::move(ptr));
 
   ctx->tx_msg->id = MSG_MR;
@@ -230,7 +230,7 @@ void FAMServer::on_completion(struct ibv_wc *wc)
 {
   BOOST_LOG_TRIVIAL(debug) << "completion";
   struct rdma_cm_id *id = reinterpret_cast<struct rdma_cm_id *>(wc->wr_id);
-  struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
+  struct server_context *ctx = static_cast<struct server_context *>(id->context);
 
   if (wc->opcode & IBV_WC_RECV) {
     if (ctx->rx_msg->id == MSG_READY) {
@@ -250,7 +250,7 @@ void FAMServer::on_completion(struct ibv_wc *wc)
 }
 void FAMServer::on_disconnect(struct rdma_cm_id *id)
 {
-  struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
+  struct server_context *ctx = static_cast<struct server_context *>(id->context);
 
   ibv_dereg_mr(ctx->rx_msg_mr);
   ibv_dereg_mr(ctx->tx_msg_mr);
@@ -272,11 +272,11 @@ void FAMServer::run(boost::program_options::variables_map const &vm)
 
   BOOST_LOG_TRIVIAL(info) << "Reading in edgelist";
 
-  struct conn_context ctx
+  struct server_context ctx
   {
     file
   };
-  this->g_ctx = &ctx;
+  this->server_ctx = &ctx;
   // 判断有没有在参数里指定使用大页
   ctx.use_hp = vm.count("hp") ? true : false;
   ctx.fam_thp_flag = vm["madvise_thp"].as<uint32_t>();
