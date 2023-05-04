@@ -271,7 +271,7 @@ public:
 void run_server(boost::program_options::variables_map const &vm)
 {
   //校验参数
-  validate_params(vm);
+  s_runtime::validate_params(vm);
   //获取服务端的ip和port，以及边文件
   std::string server_ip = vm["server-addr"].as<std::string>();
   std::string server_port = vm["port"].as<std::string>();
