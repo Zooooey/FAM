@@ -60,7 +60,7 @@ namespace {
   }
   return "To string event unknown";
 }
-void AbstractServer::rc_die(const char *reason)
+void rc_die(const char *reason)
 {
   fprintf(stderr, "%s\n", reason);
   exit(EXIT_FAILURE);
