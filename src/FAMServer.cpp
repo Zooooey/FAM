@@ -188,7 +188,7 @@ FAMServer::FAMServer() {}
 void FAMServer::on_pre_conn(struct rdma_cm_id *id)
 {
   BOOST_LOG_TRIVIAL(debug) << "precon";
-  struct server_context *ctx = g_ctx;// find a better way later
+  struct server_context *ctx = this->server_ctx;// find a better way later
 
   id->context = ctx;
 
