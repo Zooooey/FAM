@@ -1,4 +1,5 @@
-#include <server_runtime.hpp>
+//#include <server_runtime.hpp>
+#include "FAMServer.h"
 #include <client_runtime.hpp>
 
 #include <iostream>
@@ -77,7 +78,8 @@ int main(int argc, char *argv[])
     if (vm["mode"].as<std::string>() == "client") {
       run_client(vm);
     } else /* server mode */ {
-      run_server(vm);
+      FAMServer server;
+      server.run(vm);
     }
 
     return 0;

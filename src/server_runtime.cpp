@@ -97,15 +97,14 @@ class FAMServer : public AbstractServer
 {
 private:
   struct conn_context *g_ctx = 0;
+  boost::program_options::variables_map *vm;
 
-    template<typename T> auto num_elements(boost::filesystem::path const &p)
+  template<typename T> auto num_elements(boost::filesystem::path const &p)
   {
     const auto file_size = boost::filesystem::file_size(p);
     const auto n = file_size / sizeof(T);
     return n;
   }
-
-
   void post_receive(struct rdma_cm_id *id)
   {
     struct conn_context *ctx = static_cast<struct conn_context *>(id->context);
@@ -190,7 +189,7 @@ public:
   }
 
 
-  FAMServer(conn_context *ctx) { this->g_ctx = ctx; }
+  FAMServer() { }
 
   void on_pre_conn(struct rdma_cm_id *id) override
   {
@@ -265,8 +264,57 @@ public:
     free(ctx->rx_msg);
     free(ctx->tx_msg);
   }
+void run(boost::program_options::variables_map const &vm) override
+{
+  // 校验参数
+  validate_params(vm);
+  // 获取服务端的ip和port，以及边文件
+  std::string server_ip = vm["server-addr"].as<std::string>();
+  std::string server_port = vm["port"].as<std::string>();
+  std::string file = vm["edgefile"].as<std::string>();
+
+  BOOST_LOG_TRIVIAL(info) << "Starting server";
+  BOOST_LOG_TRIVIAL(info) << "Server IPoIB address: " << server_ip
+                          << " port: " << server_port;
+
+  BOOST_LOG_TRIVIAL(info) << "Reading in edgelist";
+
+  struct conn_context ctx
+  {
+    file
+  };
+  this->g_ctx = &ctx;
+  // 判断有没有在参数里指定使用大页
+  ctx.use_hp = vm.count("hp") ? true : false;
+  ctx.fam_thp_flag = vm["madvise_thp"].as<uint32_t>();
+  BOOST_LOG_TRIVIAL(info) << "hugepages? " << ctx.use_hp;
+ 
+  BOOST_LOG_TRIVIAL(info) << "waiting for connections. interrupt (^C) to exit.";
+
+  
+  //loop
+  struct sockaddr_in6 addr;
+  struct rdma_cm_id *listener = NULL;
+  struct rdma_event_channel *ec = NULL;
+
+  memset(&addr, 0, sizeof(addr));
+  addr.sin6_family = AF_INET6;
+  addr.sin6_port = htons(static_cast<uint16_t>(atoi(port)));
+
+  TEST_Z(ec = rdma_create_event_channel());
+  TEST_NZ(rdma_create_id(ec, &listener, NULL, RDMA_PS_TCP));
+  TEST_NZ(rdma_bind_addr(listener, reinterpret_cast<struct sockaddr *>(&addr)));
+  TEST_NZ(rdma_listen(listener, 10)); /* backlog=10 is arbitrary */
+
+  event_loop(ec, 0);// exit on disconnect
+
+  rdma_destroy_id(listener);
+  rdma_destroy_event_channel(ec);
+}
+
 };
 
+/*
 namespace {
   
   conn_context *g_ctx = 0;
@@ -420,37 +468,6 @@ void send_message(struct rdma_cm_id *id)
     free(ctx->tx_msg);
   }
 }
+*/
 
 
-void run_server(boost::program_options::variables_map const &vm)
-{
-  // 校验参数
-  FAMServer::validate_params(vm);
-  // 获取服务端的ip和port，以及边文件
-  std::string server_ip = vm["server-addr"].as<std::string>();
-  std::string server_port = vm["port"].as<std::string>();
-  std::string file = vm["edgefile"].as<std::string>();
-
-  BOOST_LOG_TRIVIAL(info) << "Starting server";
-  BOOST_LOG_TRIVIAL(info) << "Server IPoIB address: " << server_ip
-                          << " port: " << server_port;
-
-  BOOST_LOG_TRIVIAL(info) << "Reading in edgelist";
-
-  struct conn_context ctx
-  {
-    file
-  };
-  // 判断有没有在参数里指定使用大页
-  ctx.use_hp = vm.count("hp") ? true : false;
-  ctx.fam_thp_flag = vm["madvise_thp"].as<uint32_t>();
-  BOOST_LOG_TRIVIAL(info) << "hugepages? " << ctx.use_hp;
-  //FAMServer server(&ctx);
- 
-  rc_init(on_pre_conn, on_connection, on_completion, on_disconnect);
-
-  BOOST_LOG_TRIVIAL(info) << "waiting for connections. interrupt (^C) to exit.";
-
-  //rc_server_loop(server_port.c_str(), &server);
-  rc_server_loop(server_port.c_str());
-}
