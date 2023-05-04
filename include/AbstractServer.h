@@ -6,7 +6,19 @@
 
   
 class AbstractServer{
+
 private:
+struct context
+{
+  struct ibv_context *ctx;
+  struct ibv_pd *pd;
+  struct ibv_cq *cq;
+  struct ibv_comp_channel *comp_channel;
+  volatile unsigned long connections;
+
+  pthread_t cq_poller_thread;
+};
+  struct context *s_ctx = NULL;
   void build_params(struct rdma_conn_param *params);
   void build_connection(struct rdma_cm_id *id, bool is_qp0);
   void build_context(struct ibv_context *verbs);
