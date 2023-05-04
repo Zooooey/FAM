@@ -264,7 +264,7 @@ public:
 }
 };
 
-  void on_pre_conn(struct rdma_cm_id *id) {
+ /* void on_pre_conn(struct rdma_cm_id *id) {
       BOOST_LOG_TRIVIAL(debug) << "precon";
   struct conn_context *ctx = g_ctx;// find a better way later
 
@@ -330,7 +330,7 @@ public:
   ibv_dereg_mr(ctx->tx_msg_mr);
   free(ctx->rx_msg);
   free(ctx->tx_msg);
-}
+}*/
 
 }// namespace
 
