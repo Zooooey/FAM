@@ -18,6 +18,30 @@ void AbstractServer::build_connection(struct rdma_cm_id *id, bool is_qp0)
   TEST_NZ(rdma_create_qp(id, s_ctx->pd, &qp_attr));
 }
 
+
+void AbstractServer::build_qp_attr(struct ibv_qp_init_attr *qp_attr, bool is_qp0)// take index as param
+{
+  memset(qp_attr, 0, sizeof(*qp_attr));
+
+  if (is_qp0) {
+    qp_attr->send_cq = s_ctx->cq;// index into cq array /or just make a new qp
+    qp_attr->recv_cq = s_ctx->cq;// reuse from above
+  } else {
+    // struct ibv_cq * cq;
+    // TEST_Z(cq = ibv_create_cq(s_ctx->ctx, 10, NULL, NULL, 0)); /* cqe=10 is arbitrary
+    // */ qp_attr->send_cq = cq; //index into cq array /or just make a new qp
+    // qp_attr->recv_cq = cq; //reuse from above
+  }
+
+  qp_attr->qp_type = IBV_QPT_RC;
+
+  qp_attr->cap.max_send_wr = 1600;// max from ibv_devinfo: max_qp_wr: 16351
+  qp_attr->cap.max_recv_wr = 40;
+  qp_attr->cap.max_send_sge = 1;
+  qp_attr->cap.max_recv_sge = 1;
+  qp_attr->sq_sig_all = 0;// shouldn't need this explicitly
+}
+
 void AbstractServer::build_context(struct ibv_context *verbs)
 {
   if (s_ctx) {
