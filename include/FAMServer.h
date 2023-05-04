@@ -5,6 +5,8 @@
 #include <stdexcept>
 
 #include "AbstractServer.h"
+#include <boost/filesystem.hpp>//Remove when refactor edgelist init
+#include <boost/filesystem/fstream.hpp>//Remove when refactor edgelist init
 
 class FAMServer : public AbstractServer
 {
