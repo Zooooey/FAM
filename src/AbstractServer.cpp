@@ -18,6 +18,28 @@ void AbstractServer::build_connection(struct rdma_cm_id *id, bool is_qp0)
   TEST_NZ(rdma_create_qp(id, s_ctx->pd, &qp_attr));
 }
 
+void AbstractServer::build_context(struct ibv_context *verbs)
+{
+  if (s_ctx) {
+    if (s_ctx->ctx != verbs) rc_die("cannot handle events in more than one context.");
+
+    return;
+  }
+
+  s_ctx = static_cast<struct context *>(malloc(sizeof(struct context)));
+
+  s_ctx->ctx = verbs;
+  s_ctx->connections = 0;
+
+  TEST_Z(s_ctx->pd = ibv_alloc_pd(s_ctx->ctx));
+  TEST_Z(s_ctx->comp_channel = ibv_create_comp_channel(s_ctx->ctx));
+  TEST_Z(s_ctx->cq = ibv_create_cq(
+           s_ctx->ctx, 10, NULL, s_ctx->comp_channel, 0)); /* cqe=10 is arbitrary */
+  TEST_NZ(ibv_req_notify_cq(s_ctx->cq, 0));// can flip to solicited only
+
+  TEST_NZ(pthread_create(&s_ctx->cq_poller_thread, NULL, poll_cq, s_ctx));
+}
+
 //An event_loop both being used in server and client
 void AbstractServer::event_loop(struct rdma_event_channel *ec, int exit_on_disconnect)
 {

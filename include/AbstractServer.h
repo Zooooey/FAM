@@ -9,6 +9,7 @@ class AbstractServer{
 private:
   void build_params(struct rdma_conn_param *params);
   void build_connection(struct rdma_cm_id *id, bool is_qp0);
+  void build_context(struct ibv_context *verbs);
 public:
   virtual void on_pre_conn(struct rdma_cm_id *id) = 0;
   virtual void on_connection(struct rdma_cm_id *id) = 0;
