@@ -364,5 +364,6 @@ void run_server(boost::program_options::variables_map const &vm)
 
   BOOST_LOG_TRIVIAL(info) << "waiting for connections. interrupt (^C) to exit.";
 
-  rc_server_loop(server_port.c_str(), &server);
+  //rc_server_loop(server_port.c_str(), &server);
+  rc_server_loop(server_port.c_str());
 }
