@@ -288,6 +288,35 @@ namespace {
 
     TEST_NZ(ibv_post_recv(id->qp, &wr, &bad_wr));
   }
+
+ auto get_edge_list(std::string adj_file, ibv_pd *pd, bool use_HP, int fam_thp_flag)
+  {
+    namespace fs = boost::filesystem;
+    BOOST_LOG_TRIVIAL(info) << "Reading adj file: " << adj_file;
+
+    fs::path p(adj_file);
+    if (!(fs::exists(p) && fs::is_regular_file(p)))
+      throw std::runtime_error(".adj file not found");
+
+    auto const edges_count = num_elements<uint32_t>(p);
+    BOOST_LOG_TRIVIAL(info) << "adj file edges count: " << edges_count;
+    auto ptr =
+      famgraph::RDMA_mmap_unique<uint32_t>(edges_count, pd, use_HP, fam_thp_flag);
+    auto array = reinterpret_cast<char *>(ptr.get());
+    auto const filesize = edges_count * sizeof(uint32_t);
+    file_mapper get_mapped_chunk{ adj_file, filesize, use_HP };
+
+    while (get_mapped_chunk.has_next()) {
+      auto const [fptr, len] = get_mapped_chunk();
+      std::memcpy(array, fptr.get(), len);
+      array += len;
+      std::cout << "#" << std::flush;
+    }
+
+    auto mr = ptr.get_deleter().mr;
+    return std::make_tuple(std::move(ptr), mr, edges_count);
+  }
+
    void on_pre_conn(struct rdma_cm_id *id) 
   {
     BOOST_LOG_TRIVIAL(debug) << "precon";
