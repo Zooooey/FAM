@@ -1,4 +1,5 @@
 #include "AbstractServer.h"
+#include <boost/log/trivial.hpp>
 
 #define TEST_NZ(x) do { if ( (x)) rc_die("error: " #x " failed (returned non-zero)." ); } while (0)
 #define TEST_Z(x)  do { if (!(x)) rc_die("error: " #x " failed (returned zero/null)."); } while (0)
