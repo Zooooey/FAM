@@ -14,6 +14,8 @@ add_library(FAMGraph
   communication_runtime.cpp
   server_runtime.cpp
   client_runtime.cpp
+  FAMServer.cpp
+  AbstractServer.cpp
   )
 
 target_include_directories(FAMGraph
