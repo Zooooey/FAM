@@ -16,7 +16,6 @@ private:
   void send_message(struct rdma_cm_id *id);*/
     struct conn_context *g_ctx = 0;
 public:
-  static void validate_params(boost::program_options::variables_map const &vm);
   virtual void on_pre_conn(struct rdma_cm_id *id) override;
   virtual void on_connection(struct rdma_cm_id *id) override;
   virtual void on_completion(struct ibv_wc *wc) override;
