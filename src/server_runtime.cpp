@@ -24,7 +24,7 @@
 
 
 
-namespace {
+namespace s_runtime{
 
 
 void validate_params(boost::program_options::variables_map const &vm)
@@ -288,7 +288,7 @@ void run_server(boost::program_options::variables_map const &vm)
   ctx.use_hp = vm.count("hp") ? true : false;
   ctx.fam_thp_flag = vm["madvise_thp"].as<uint32_t>();
   BOOST_LOG_TRIVIAL(info) << "hugepages? " << ctx.use_hp;
-  FAMServer server(&ctx);
+  s_runtime::FAMServer server(&ctx);
 
   //rc_init(on_pre_conn, on_connection, on_completion, on_disconnect);
 
