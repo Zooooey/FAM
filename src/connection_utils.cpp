@@ -3,6 +3,7 @@
 #include <boost/log/trivial.hpp>
 
 #include <client_runtime.hpp>
+#include "fam_common.hpp"
 
 struct context
 {
@@ -275,11 +276,5 @@ void rc_client_loop(const char *host, const char *port, struct client_context *c
 
 
 void rc_disconnect(struct rdma_cm_id *id) { rdma_disconnect(id); }
-
-void rc_die(const char *reason)
-{
-  fprintf(stderr, "%s\n", reason);
-  exit(EXIT_FAILURE);
-}
 
 struct ibv_pd *rc_get_pd() { return s_ctx->pd; }
