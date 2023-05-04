@@ -248,14 +248,14 @@ void event_loop(struct rdma_event_channel *ec, int exit_on_disconnect, AbstractS
       TEST_NZ(rdma_accept(event_copy.id, &cm_params));
       latch2 = true;
     } else if (event_copy.event == RDMA_CM_EVENT_ESTABLISHED) {// Runs on both
-      if(!latch3) server->on_connect_cb(event_copy.id);
+      if(!latch3) server->on_connect(event_copy.id);
       BOOST_LOG_TRIVIAL(info) << "RDMA_CM Established, id:"<<event_copy.id;
       latch3 = true;
       s_ctx->connections++;
     } else if (event_copy.event == RDMA_CM_EVENT_DISCONNECTED) {// Runs on both
       rdma_destroy_qp(event_copy.id);
       BOOST_LOG_TRIVIAL(info) << "Connection disconnected, id:"<<event_copy.id;
-      if(!latch4) server->on_disconnect_cb(event_copy.id);
+      if(!latch4) server->on_disconnect(event_copy.id);
       rdma_destroy_id(event_copy.id);
 
       if (exit_on_disconnect) break;
