@@ -8,7 +8,7 @@ void AbstractServer::build_params(struct rdma_conn_param *params)
   params->rnr_retry_count = 7; /* infinite retry */
 }
 
-void AbstractServer::build_connection(struct rdma_cm_id *id, bool is_qp0);
+void AbstractServer::build_connection(struct rdma_cm_id *id, bool is_qp0)
 {
   struct ibv_qp_init_attr qp_attr;
 
