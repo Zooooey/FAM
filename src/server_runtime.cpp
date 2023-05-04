@@ -25,8 +25,6 @@
 
 
 namespace {
-  struct conn_context *g_ctx = 0;
-
 void validate_params(boost::program_options::variables_map const &vm)
 {
   if (!vm.count("server-addr"))
@@ -358,7 +356,6 @@ void run_server(boost::program_options::variables_map const &vm)
   ctx.fam_thp_flag = vm["madvise_thp"].as<uint32_t>();
   BOOST_LOG_TRIVIAL(info) << "hugepages? " << ctx.use_hp;
   FAMServer server(&ctx);
-  g_ctx = &ctx;
 
   //rc_init(on_pre_conn, on_connection, on_completion, on_disconnect);
 
