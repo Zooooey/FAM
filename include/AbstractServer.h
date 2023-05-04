@@ -7,7 +7,7 @@
   
 class AbstractServer{
 
-private:
+protected:
 struct context
 {
   struct ibv_context *ctx;
