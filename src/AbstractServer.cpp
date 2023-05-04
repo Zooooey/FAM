@@ -8,6 +8,16 @@ void AbstractServer::build_params(struct rdma_conn_param *params)
   params->rnr_retry_count = 7; /* infinite retry */
 }
 
+void AbstractServer::build_connection(struct rdma_cm_id *id, bool is_qp0);
+{
+  struct ibv_qp_init_attr qp_attr;
+
+  build_context(id->verbs);// guaranteed to only go thru on qp0
+  build_qp_attr(&qp_attr, is_qp0);// do special handling on qp > 0
+
+  TEST_NZ(rdma_create_qp(id, s_ctx->pd, &qp_attr));
+}
+
 //An event_loop both being used in server and client
 void AbstractServer::event_loop(struct rdma_event_channel *ec, int exit_on_disconnect)
 {
