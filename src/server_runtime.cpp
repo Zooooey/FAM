@@ -24,7 +24,7 @@
 
 
 
-namespace {
+namespace s_runtime{
 
 
 void validate_params(boost::program_options::variables_map const &vm)
@@ -195,7 +195,7 @@ public:
   FAMServer(conn_context* ctx){
     this->g_ctx = ctx;
   }
-  
+
   void on_pre_conn(struct rdma_cm_id *id) override{
      BOOST_LOG_TRIVIAL(debug) << "precon";
   struct conn_context *ctx = g_ctx;// find a better way later
