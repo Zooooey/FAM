@@ -92,7 +92,7 @@ public:
   }
 };
 
-
+/*
 class FAMServer : public AbstractServer
 {
 private:
@@ -312,7 +312,7 @@ void run(boost::program_options::variables_map const &vm) override
   rdma_destroy_event_channel(ec);
 }
 
-};
+};*/
 
 /*
 namespace {
