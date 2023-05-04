@@ -18,12 +18,12 @@ struct context
 
   pthread_t cq_poller_thread;
 };
-  static struct constexpr context *s_ctx = NULL;
+  static struct context constexpr *s_ctx = NULL;
   void build_params(struct rdma_conn_param *params);
   void build_connection(struct rdma_cm_id *id, bool is_qp0);
   void build_context(struct ibv_context *verbs);
   void build_qp_attr(struct ibv_qp_init_attr *qp_attr, bool is_qp0);
-  void rc_die(const char *reason);
+  static void rc_die(const char *reason);
   static void *poll_cq(void *ctx);
 public:
   virtual void on_pre_conn(struct rdma_cm_id *id) = 0;
