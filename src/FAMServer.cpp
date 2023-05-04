@@ -16,7 +16,6 @@
 #include <fcntl.h>//for open
 
 #include "mmap_util.hpp"
-#include "connection_utils.hpp"
 #include "messages.hpp"
 #include "fam_common.hpp"
 #include "AbstractServer.h"
