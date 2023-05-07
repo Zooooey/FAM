@@ -142,7 +142,8 @@ void on_completion(struct ibv_wc *wc)
       uint64_t const num_edges = ctx->rx_msg->data.mr.total_edges;
       ctx->num_edges = num_edges;
       post_receive(id);
-      BOOST_LOG_TRIVIAL(info) << "Received server MR";
+      BOOST_LOG_TRIVIAL(info) << "RDMA: Received server MR, remote_addr:"<<ctx->peer_addr<<" rkey:"<<ctx->peer_rkey<<" remote edges:"<<num_edges;
+
       // init_rdma_heap(ctx);
       ctx->pd = rc_get_pd();// grab a ref to the pd
 

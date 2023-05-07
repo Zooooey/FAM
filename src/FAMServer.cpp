@@ -42,9 +42,10 @@ struct server_context// consider renaming server context
   server_context(const server_context &) = delete;
 };
 
-
+//use mmap to map a file on filesystem in chunk size steps.
 class file_mapper
 {
+  //Default chunk szie is 30G
   constexpr static uint64_t default_chunk = 30UL * (1 << 30);// 30 GB
   uint64_t const chunk_size{ default_chunk };
   uint64_t offset{ 0 };
@@ -129,8 +130,12 @@ auto get_edge_list(std::string adj_file, ibv_pd *pd, bool use_HP, int fam_thp_fl
 
   auto const edges_count = num_elements<uint32_t>(p);
   BOOST_LOG_TRIVIAL(info) << "adj file edges count: " << edges_count;
+
+  //Create a memory region for RDMA
   auto ptr = famgraph::RDMA_mmap_unique<uint32_t>(edges_count, pd, use_HP, fam_thp_flag);
   auto array = reinterpret_cast<char *>(ptr.get());
+
+  //Read file with mmap() then copy all file content it to RDMA memory region.
   auto const filesize = edges_count * sizeof(uint32_t);
   file_mapper get_mapped_chunk{ adj_file, filesize, use_HP };
 
@@ -220,10 +225,12 @@ void FAMServer::on_connection(struct rdma_cm_id *id)
 
   ctx->tx_msg->id = MSG_MR;
   ctx->tx_msg->data.mr.addr = reinterpret_cast<uintptr_t>(mr->addr);
+  BOOST_LOG_TRIVIAL(info) << "MemoryRegion: memory addr on server side:"<<ctx->tx_msg->data.mr.addr;
   
   ctx->tx_msg->data.mr.rkey = mr->rkey;
   ctx->tx_msg->data.mr.total_edges = edges;
 
+  BOOST_LOG_TRIVIAL(info) <<" RDMA: send server side MR info to client!";
   send_message(id);
 }
 void FAMServer::on_completion(struct ibv_wc *wc)
