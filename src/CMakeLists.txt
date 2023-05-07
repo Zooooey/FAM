@@ -12,7 +12,6 @@ add_library(FAMGraph
   vertex_table.cpp
   connection_utils.cpp
   communication_runtime.cpp
-  server_runtime.cpp
   client_runtime.cpp
   FAMServer.cpp
   AbstractServer.cpp

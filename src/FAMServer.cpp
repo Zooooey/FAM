@@ -211,7 +211,7 @@ void FAMServer::on_pre_conn(struct rdma_cm_id *id)
 }
 void FAMServer::on_connection(struct rdma_cm_id *id)
 {
-  BOOST_LOG_TRIVIAL(debug) << "on connection";
+  BOOST_LOG_TRIVIAL(info) << "on connection!";
   struct server_context *ctx = static_cast<struct server_context *>(id->context);
 
   auto [ptr, mr, edges] =
@@ -220,6 +220,7 @@ void FAMServer::on_connection(struct rdma_cm_id *id)
 
   ctx->tx_msg->id = MSG_MR;
   ctx->tx_msg->data.mr.addr = reinterpret_cast<uintptr_t>(mr->addr);
+  
   ctx->tx_msg->data.mr.rkey = mr->rkey;
   ctx->tx_msg->data.mr.total_edges = edges;
 

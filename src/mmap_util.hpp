@@ -25,6 +25,7 @@ struct RDMA_mmap_deleter
   {
     if (ibv_dereg_mr(mr)) { BOOST_LOG_TRIVIAL(fatal) << "error unmapping RDMA buffer"; }
     munmap(ptr, m_size);
+    BOOST_LOG_TRIVIAL(info)<<"MemoryRegion: free memory region success!";
   }
 };
  
@@ -39,7 +40,7 @@ template<typename T> auto RDMA_mmap_unique(uint64_t array_size, ibv_pd *pd, bool
   auto const aligned_size =
     use_HP ? boost::alignment::align_up(req_size, HP_align) : req_size;
 
-  BOOST_LOG_TRIVIAL(debug) << "aligned size: " << aligned_size << " use_HP: " << use_HP;
+  BOOST_LOG_TRIVIAL(info) << "MemoryRegion: aligned size=" << aligned_size << " use_HP=" << use_HP;
   if (auto ptr = mmap(0, aligned_size, PROT_RW, MAP_ALLOC | HP_FLAGS, -1, 0)) {
     //madvice for THP 
     fam_thp::advice_edge_thp(ptr, aligned_size, fam_thp_flag);
@@ -51,6 +52,8 @@ template<typename T> auto RDMA_mmap_unique(uint64_t array_size, ibv_pd *pd, bool
     if (!mr) {
       BOOST_LOG_TRIVIAL(fatal) << "ibv_reg_mr failed" <<"strerror(errno):"<<strerror(errno);
       throw std::runtime_error("ibv_reg_mr failed");
+    } else {
+      BOOST_LOG_TRIVIAL(info) << "MemoryRegion: ibv_reg_mr success!";
     }
 
     auto del = RDMA_mmap_deleter(aligned_size, mr);

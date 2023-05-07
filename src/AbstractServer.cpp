@@ -126,8 +126,8 @@ void AbstractServer::build_qp_attr(struct ibv_qp_init_attr *qp_attr, bool is_qp0
 
   qp_attr->qp_type = IBV_QPT_RC;
 
-  qp_attr->cap.max_send_wr = 1600;// max from ibv_devinfo: max_qp_wr: 16351
-  qp_attr->cap.max_recv_wr = 40;
+  qp_attr->cap.max_send_wr = 40;// max from ibv_devinfo: max_qp_wr: 16351
+  qp_attr->cap.max_recv_wr = 160;
   qp_attr->cap.max_send_sge = 1;
   qp_attr->cap.max_recv_sge = 1;
   qp_attr->sq_sig_all = 0;// shouldn't need this explicitly
