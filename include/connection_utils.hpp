@@ -12,7 +12,7 @@
 
 typedef void (*pre_conn_cb_fn)(struct rdma_cm_id *id);
 typedef void (*connect_cb_fn)(struct rdma_cm_id *id);
-typedef void (*completion_cb_fn)(struct ibv_wc *wc);
+typedef void (*completion_cb_fn)(struct ibv_wc *wc, struct ibv_cq * cq);
 typedef void (*disconnect_cb_fn)(struct rdma_cm_id *id);
 
 void rc_init(pre_conn_cb_fn, connect_cb_fn, completion_cb_fn, disconnect_cb_fn);

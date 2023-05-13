@@ -129,22 +129,8 @@ void on_pre_conn(struct rdma_cm_id *id)
   post_receive(id);// prepare to recv MSG_MR
 }
 
-void on_completion(struct ibv_wc *wc)
-{
-  BOOST_LOG_TRIVIAL(debug) << "on completion";
-  struct rdma_cm_id *id = reinterpret_cast<struct rdma_cm_id *>(wc->wr_id);
-  struct client_context *ctx = static_cast<struct client_context *>(id->context);
-
-  if (wc->opcode & IBV_WC_RECV) {
-    if (ctx->rx_msg->id == MSG_MR) {
-      ctx->peer_addr = ctx->rx_msg->data.mr.addr;
-      ctx->peer_rkey = ctx->rx_msg->data.mr.rkey;
-      uint64_t const num_edges = ctx->rx_msg->data.mr.total_edges;
-      ctx->num_edges = num_edges;
-      post_receive(id);
-      BOOST_LOG_TRIVIAL(info) << "RDMA: Received server MR, remote_addr:"<<ctx->peer_addr<<" rkey:"<<ctx->peer_rkey<<" remote edges:"<<num_edges;
-
-      BOOST_LOG_TRIVIAL(info) << "Sending a test RDMA_READ request to server...";
+void temporary_test(struct ibv_wc *wc, struct ibv_cq * cq){
+       BOOST_LOG_TRIVIAL(info) << "Sending a test RDMA_READ request to server...";
       //TODO
       struct ibv_send_wr *bad_wr = NULL;
       struct ibv_send_wr wr;
@@ -163,9 +149,37 @@ void on_completion(struct ibv_wc *wc)
       sg.length = sizeof(uint32_t);
 
       int ret = ibv_post_send(id->qp, &wr, &bad_wr);
-      
+      if(ret != 0 ){
+        BOOST_LOG_TRIVIAL(fatal) << "Sending a test RDMA_READ request to server failed!";
+      }
+      while (ibv_poll_cq(cq, 1, &wc)) {
+        if (wc.status == IBV_WC_SUCCESS){
+          BOOST_LOG_TRIVIAL(info) << "Sending a test RDMA_READ request to server successful!";
+          BOOST_LOG_TRIVIAL(info) << "The target id read from RDMA server is :"<<test_target_id;
+        }
+      else
+        rc_die("poll_cq: status is not IBV_WC_SUCCESS");
+    }
 
+    //TODO:end
+}
 
+void on_completion(struct ibv_wc *wc, struct ibv_cq * cq)
+{
+  BOOST_LOG_TRIVIAL(debug) << "on completion";
+  struct rdma_cm_id *id = reinterpret_cast<struct rdma_cm_id *>(wc->wr_id);
+  struct client_context *ctx = static_cast<struct client_context *>(id->context);
+
+  if (wc->opcode & IBV_WC_RECV) {
+    if (ctx->rx_msg->id == MSG_MR) {
+      ctx->peer_addr = ctx->rx_msg->data.mr.addr;
+      ctx->peer_rkey = ctx->rx_msg->data.mr.rkey;
+      uint64_t const num_edges = ctx->rx_msg->data.mr.total_edges;
+      ctx->num_edges = num_edges;
+      post_receive(id);
+      BOOST_LOG_TRIVIAL(info) << "RDMA: Received server MR, remote_addr:"<<ctx->peer_addr<<" rkey:"<<ctx->peer_rkey<<" remote edges:"<<num_edges;
+
+      temporary_test(wc, cq);
       // init_rdma_heap(ctx);
       ctx->pd = rc_get_pd();// grab a ref to the pd
 
