@@ -227,8 +227,10 @@ void *poll_cq(void *ctx)
       if (wc.status == IBV_WC_SUCCESS){
         s_on_completion_cb(&wc, cq);
       }
-      else
+      else{
+        BOOST_LOG_TRIVIAL(fatal) << "poll_cq: status:"<<wc.status;
         rc_die("poll_cq: status is not IBV_WC_SUCCESS");
+		}
     }
   }
 

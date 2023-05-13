@@ -149,10 +149,15 @@ void temporary_test(struct ibv_wc *wc, struct ibv_cq * cq){
       
 
       uint32_t test_target_id;
-      sge.addr = reinterpret_cast<uintptr_t>(&test_target_id);
-      sge.length = sizeof(uint32_t);
 
       struct ibv_mr *mr = ibv_reg_mr(ctx->pd, &test_target_id, sizeof(uint32_t), IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ);
+      if (!mr)	{
+        BOOST_LOG_TRIVIAL(fatal) << "ibv_reg_mr for test RDMA_READ failed!";
+      }
+
+      sge.addr = reinterpret_cast<uintptr_t>(&test_target_id);
+      sge.length = sizeof(uint32_t);
+	  sge.lkey =  mr->lkey;
 
 	  
       int ret = ibv_post_send(id->qp, &wr, &bad_wr);
@@ -169,11 +174,11 @@ void temporary_test(struct ibv_wc *wc, struct ibv_cq * cq){
           BOOST_LOG_TRIVIAL(info) << "Sending a test RDMA_READ request to server successful!";
           BOOST_LOG_TRIVIAL(info) << "The target id read from RDMA server is :"<<test_target_id;
         }
-      	else
+      	else{
         BOOST_LOG_TRIVIAL(fatal) << "test failed! status:"<<wc->status;
         rc_die("poll_cq: test status is not IBV_WC_SUCCESS");
         }
-      }
+      }}
       if (ibv_dereg_mr(mr)) { BOOST_LOG_TRIVIAL(fatal) << "error unmapping test RDMA buffer"; }
           BOOST_LOG_TRIVIAL(info) << "Test done!";
 
