@@ -144,6 +144,28 @@ void on_completion(struct ibv_wc *wc)
       post_receive(id);
       BOOST_LOG_TRIVIAL(info) << "RDMA: Received server MR, remote_addr:"<<ctx->peer_addr<<" rkey:"<<ctx->peer_rkey<<" remote edges:"<<num_edges;
 
+      BOOST_LOG_TRIVIAL(info) << "Sending a test RDMA_READ request to server...";
+      //TODO
+      struct ibv_send_wr *bad_wr = NULL;
+      struct ibv_send_wr wr;
+      memset(&wr, 0, sizeof(wr));// maybe optimize away
+      wr.opcode = IBV_WR_RDMA_READ;
+      wr.send_flags = IBV_SEND_SIGNALED;// can change for selective signaling
+      wr.wr.rdma.remote_addr = ctx->peer_addr + 0;
+      wr.wr.rdma.rkey = ctx->peer_rkey;
+
+      struct ibv_sge sge;
+      wr.sg_list=&sge;
+      wr.num_sge = 1;
+
+      uint32_t test_target_id;
+      sg.addr = reinterpret_cast<uintptr_t>(&test_target_id);
+      sg.length = sizeof(uint32_t);
+
+      int ret = ibv_post_send(id->qp, &wr, &bad_wr);
+      
+
+
       // init_rdma_heap(ctx);
       ctx->pd = rc_get_pd();// grab a ref to the pd
 
