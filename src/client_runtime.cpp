@@ -130,6 +130,8 @@ void on_pre_conn(struct rdma_cm_id *id)
 }
 
 void temporary_test(struct ibv_wc *wc, struct ibv_cq * cq){
+     struct rdma_cm_id *id = reinterpret_cast<struct rdma_cm_id *>(wc->wr_id);
+      struct client_context *ctx = static_cast<struct client_context *>(id->context);
        BOOST_LOG_TRIVIAL(info) << "Sending a test RDMA_READ request to server...";
       //TODO
       struct ibv_send_wr *bad_wr = NULL;
@@ -145,21 +147,30 @@ void temporary_test(struct ibv_wc *wc, struct ibv_cq * cq){
       wr.num_sge = 1;
 
       uint32_t test_target_id;
-      sg.addr = reinterpret_cast<uintptr_t>(&test_target_id);
-      sg.length = sizeof(uint32_t);
+      sge.addr = reinterpret_cast<uintptr_t>(&test_target_id);
+      sge.length = sizeof(uint32_t);
 
+	  
       int ret = ibv_post_send(id->qp, &wr, &bad_wr);
       if(ret != 0 ){
         BOOST_LOG_TRIVIAL(fatal) << "Sending a test RDMA_READ request to server failed!";
       }
-      while (ibv_poll_cq(cq, 1, &wc)) {
-        if (wc.status == IBV_WC_SUCCESS){
+	  bool is_done = false;
+      while(!is_done){
+		int cq_received_num = ibv_poll_cq(cq, 1, wc);
+		if(cq_received_num!=0){
+			is_done=true;
+        if (wc->status == IBV_WC_SUCCESS){
+          BOOST_LOG_TRIVIAL(info) << "cq_received_num:"<<cq_received_num;
           BOOST_LOG_TRIVIAL(info) << "Sending a test RDMA_READ request to server successful!";
           BOOST_LOG_TRIVIAL(info) << "The target id read from RDMA server is :"<<test_target_id;
         }
-      else
-        rc_die("poll_cq: status is not IBV_WC_SUCCESS");
-    }
+      	else
+        BOOST_LOG_TRIVIAL(fatal) << "test failed! status:"<<wc->status;
+        rc_die("poll_cq: test status is not IBV_WC_SUCCESS");
+        }
+      }
+          BOOST_LOG_TRIVIAL(info) << "Test done!";
 
     //TODO:end
 }

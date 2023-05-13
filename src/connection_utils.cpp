@@ -225,8 +225,7 @@ void *poll_cq(void *ctx)
 
     while (ibv_poll_cq(cq, 1, &wc)) {
       if (wc.status == IBV_WC_SUCCESS){
-        temporary_test(&wc,cq);
-        s_on_completion_cb(&wc);
+        s_on_completion_cb(&wc, cq);
       }
       else
         rc_die("poll_cq: status is not IBV_WC_SUCCESS");
