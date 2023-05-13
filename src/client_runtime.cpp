@@ -152,7 +152,7 @@ void temporary_test(struct ibv_wc *wc, struct ibv_cq * cq){
       sge.addr = reinterpret_cast<uintptr_t>(&test_target_id);
       sge.length = sizeof(uint32_t);
 
-      struct ibv_mr *mr = ibv_reg_mr(pd, &test_target_id, sizeof(uint32_t), IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ);
+      struct ibv_mr *mr = ibv_reg_mr(ctx->pd, &test_target_id, sizeof(uint32_t), IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ);
 
 	  
       int ret = ibv_post_send(id->qp, &wr, &bad_wr);
@@ -195,9 +195,10 @@ void on_completion(struct ibv_wc *wc, struct ibv_cq * cq)
       post_receive(id);
       BOOST_LOG_TRIVIAL(info) << "RDMA: Received server MR, remote_addr:"<<ctx->peer_addr<<" rkey:"<<ctx->peer_rkey<<" remote edges:"<<num_edges;
 
-      temporary_test(wc, cq);
+      
       // init_rdma_heap(ctx);
       ctx->pd = rc_get_pd();// grab a ref to the pd
+      temporary_test(wc, cq);
 
       uint32_t const num_vertices = famgraph::get_num_verts(ctx->index_file);
       BOOST_LOG_TRIVIAL(info) << "|V| " << num_vertices;
