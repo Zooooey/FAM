@@ -146,9 +146,13 @@ void temporary_test(struct ibv_wc *wc, struct ibv_cq * cq){
       wr.sg_list=&sge;
       wr.num_sge = 1;
 
+      
+
       uint32_t test_target_id;
       sge.addr = reinterpret_cast<uintptr_t>(&test_target_id);
       sge.length = sizeof(uint32_t);
+
+      struct ibv_mr *mr = ibv_reg_mr(pd, &test_target_id, sizeof(uint32_t), IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ);
 
 	  
       int ret = ibv_post_send(id->qp, &wr, &bad_wr);
@@ -170,6 +174,7 @@ void temporary_test(struct ibv_wc *wc, struct ibv_cq * cq){
         rc_die("poll_cq: test status is not IBV_WC_SUCCESS");
         }
       }
+      if (ibv_dereg_mr(mr)) { BOOST_LOG_TRIVIAL(fatal) << "error unmapping test RDMA buffer"; }
           BOOST_LOG_TRIVIAL(info) << "Test done!";
 
     //TODO:end
