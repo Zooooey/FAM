@@ -134,6 +134,7 @@ void test_all_qp(std::vector<rdma_cm_id*> * cm_ids, ibv_cq* cq){
   struct ibv_send_wr *bad_wr = NULL;
   struct ibv_send_wr wr;
   struct ibv_sge sge;
+  struct ibv_wc wc;
 
   for(int i=0;i<cm_ids->size();i++){
     struct rdma_cm_id *id = cm_ids->at(i);
@@ -141,6 +142,7 @@ void test_all_qp(std::vector<rdma_cm_id*> * cm_ids, ibv_cq* cq){
     BOOST_LOG_TRIVIAL(info) << "Testing "<<(i+1)<<"th qp";
     memset(&wr, 0, sizeof(wr));
     memset(&sge, 0, sizeof(sge));
+    memset(&wc, 0, sizeof(wc));
 
     // wr.wr_id = reinterpret_cast<uintptr_t>(av);
     wr.opcode = IBV_WR_RDMA_READ;
@@ -165,23 +167,23 @@ void test_all_qp(std::vector<rdma_cm_id*> * cm_ids, ibv_cq* cq){
     /*sge.addr = reinterpret_cast<uintptr_t>(buffer);
     sge.length = length;
     sge.lkey = ctx->heap_mr->lkey;*/
-    
+
     int ret = ibv_post_send(cm_ids->at(i)->qp, &wr, &bad_wr);
     if(ret != 0 ){
       BOOST_LOG_TRIVIAL(fatal) <<i<<"th qp sending a test RDMA_READ request to server failed!";
     }
     bool is_done = false;
     while(!is_done){
-      int cq_received_num = ibv_poll_cq(cq, 1, wc);
+      int cq_received_num = ibv_poll_cq(cq, 1, &wc);
       if(cq_received_num!=0){
         is_done=true;
-        if (wc->status == IBV_WC_SUCCESS){
+        if (wc.status == IBV_WC_SUCCESS){
           BOOST_LOG_TRIVIAL(info) << "cq_received_num:"<<cq_received_num;
           BOOST_LOG_TRIVIAL(info) <<i<<"th qp sending a test RDMA_READ request to server successful!";
           BOOST_LOG_TRIVIAL(info) << "The target id read from RDMA server is :"<<test_target_id;
         }
         else{
-          BOOST_LOG_TRIVIAL(fatal) << "test failed! status:"<<wc->status;
+          BOOST_LOG_TRIVIAL(fatal) << "test failed! status:"<<wc.status;
           rc_die("poll_cq: test status is not IBV_WC_SUCCESS");
         }
       }}
