@@ -166,8 +166,8 @@ void test_all_qp(std::vector<rdma_cm_id*> * cm_ids){
     sge.length = length;
     sge.lkey = ctx->heap_mr->lkey;*/
 
-
-    int ret = ibv_post_send(cm_ids->at(i)->qp, &wr, &bad_wr);
+    struct ibv_cq * cq = cm_ids->at(i)->qp;
+    int ret = ibv_post_send(cq, &wr, &bad_wr);
     if(ret != 0 ){
       BOOST_LOG_TRIVIAL(fatal) <<i<<"th qp sending a test RDMA_READ request to server failed!";
     }
