@@ -130,16 +130,17 @@ void on_pre_conn(struct rdma_cm_id *id)
 }
 
 
-void test_all_qp(std::vector<rdma_cm_id*> * cm_ids, ibv_cq* cq){
+void test_all_qp(std::vector<rdma_cm_id*> * cm_ids, ibv_cq* cq)
+{
   struct ibv_send_wr *bad_wr = NULL;
   struct ibv_send_wr wr;
   struct ibv_sge sge;
   struct ibv_wc wc;
 
-  for(int i=0;i<cm_ids->size();i++){
+  for (int i = 0; i < cm_ids->size(); i++) {
     struct rdma_cm_id *id = cm_ids->at(i);
     struct client_context *ctx = static_cast<struct client_context *>(id->context);
-    BOOST_LOG_TRIVIAL(info) << "Testing "<<(i+1)<<"th qp";
+    BOOST_LOG_TRIVIAL(info) << "Testing " << (i + 1) << "th qp";
     memset(&wr, 0, sizeof(wr));
     memset(&sge, 0, sizeof(sge));
     memset(&wc, 0, sizeof(wc));
@@ -155,43 +156,49 @@ void test_all_qp(std::vector<rdma_cm_id*> * cm_ids, ibv_cq* cq){
 
     uint32_t test_target_id;
 
-    struct ibv_mr *mr = ibv_reg_mr(ctx->pd, &test_target_id, sizeof(uint32_t), IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ);
-    if (!mr)	{
-      BOOST_LOG_TRIVIAL(fatal) << "ibv_reg_mr for test RDMA_READ failed!";
-    }
+    struct ibv_mr *mr = ibv_reg_mr(ctx->pd,
+      &test_target_id,
+      sizeof(uint32_t),
+      IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ);
+    if (!mr) { BOOST_LOG_TRIVIAL(fatal) << "ibv_reg_mr for test RDMA_READ failed!"; }
 
     sge.addr = reinterpret_cast<uintptr_t>(&test_target_id);
     sge.length = sizeof(uint32_t);
-    sge.lkey =  mr->lkey;
+    sge.lkey = mr->lkey;
 
     /*sge.addr = reinterpret_cast<uintptr_t>(buffer);
     sge.length = length;
     sge.lkey = ctx->heap_mr->lkey;*/
 
     int ret = ibv_post_send(cm_ids->at(i)->qp, &wr, &bad_wr);
-    if(ret != 0 ){
-      BOOST_LOG_TRIVIAL(fatal) <<i<<"th qp sending a test RDMA_READ request to server failed!";
+    if (ret != 0) {
+      BOOST_LOG_TRIVIAL(fatal)
+        << i << "th qp sending a test RDMA_READ request to server failed!";
     }
     bool is_done = false;
-    while(!is_done){
+    while (!is_done) {
       int cq_received_num = ibv_poll_cq(cq, 1, &wc);
-      if(cq_received_num!=0){
-        is_done=true;
-        if (wc.status == IBV_WC_SUCCESS){
-          BOOST_LOG_TRIVIAL(info) << "cq_received_num:"<<cq_received_num;
-          BOOST_LOG_TRIVIAL(info) <<i<<"th qp sending a test RDMA_READ request to server successful!";
-          BOOST_LOG_TRIVIAL(info) << "The target id read from RDMA server is :"<<test_target_id;
-        }
-        else{
-          BOOST_LOG_TRIVIAL(fatal) << "test failed! status:"<<wc.status;
+      if (cq_received_num != 0) {
+        is_done = true;
+        if (wc.status == IBV_WC_SUCCESS) {
+          BOOST_LOG_TRIVIAL(info) << "cq_received_num:" << cq_received_num;
+          BOOST_LOG_TRIVIAL(info)
+            << i << "th qp sending a test RDMA_READ request to server successful!";
+          BOOST_LOG_TRIVIAL(info)
+            << "The target id read from RDMA server is :" << test_target_id;
+        } else {
+          BOOST_LOG_TRIVIAL(fatal) << "test failed! status:" << wc.status;
           rc_die("poll_cq: test status is not IBV_WC_SUCCESS");
         }
-      }}
+      }
+    }
 
-    if (ibv_dereg_mr(mr)) { BOOST_LOG_TRIVIAL(fatal) << "error unmapping test RDMA buffer";
+    if (ibv_dereg_mr(mr)) {
+      BOOST_LOG_TRIVIAL(fatal) << "error unmapping test RDMA buffer";
+    }
+
   }
   BOOST_LOG_TRIVIAL(info) << "Test done!";
-
 }
 
 void temporary_test(struct ibv_wc *wc, struct ibv_cq * cq){
