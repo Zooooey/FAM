@@ -219,9 +219,11 @@ void FAMServer::on_connection(struct rdma_cm_id *id)
   BOOST_LOG_TRIVIAL(info) << "on connection!";
   struct server_context *ctx = static_cast<struct server_context *>(id->context);
 
+  BOOST_LOG_TRIVIAL(info) << "pd1:"<<fam_ib_ctx->pd;
   auto [ptr, mr, edges] =
     get_edge_list(ctx->adj_filename, fam_ib_ctx->pd, ctx->use_hp, ctx->fam_thp_flag);
   ctx->v.emplace_back(std::move(ptr));
+  BOOST_LOG_TRIVIAL(info) << "pd2:"<<fam_ib_ctx->pd;
 
   ctx->tx_msg->id = MSG_MR;
   ctx->tx_msg->data.mr.addr = reinterpret_cast<uintptr_t>(mr->addr);
@@ -232,10 +234,14 @@ void FAMServer::on_connection(struct rdma_cm_id *id)
 
   BOOST_LOG_TRIVIAL(info) <<" RDMA: send server side MR info to client!";
   send_message(id);
+  BOOST_LOG_TRIVIAL(info) << "pd3:"<<fam_ib_ctx->pd;
+  if(!fam_ib_ctx){
+  	BOOST_LOG_TRIVIAL(info) << "fam_ib_ctx == 0";
+  }
 }
 void FAMServer::on_completion(struct ibv_wc *wc)
 {
-  BOOST_LOG_TRIVIAL(debug) << "completion";
+  BOOST_LOG_TRIVIAL(info) << "completion";
   struct rdma_cm_id *id = reinterpret_cast<struct rdma_cm_id *>(wc->wr_id);
   struct server_context *ctx = static_cast<struct server_context *>(id->context);
 

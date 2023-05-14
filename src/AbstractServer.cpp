@@ -69,14 +69,21 @@ void * AbstractServer::poll_cq(void *arg)
 {
 
   AbstractServer* instance = static_cast<AbstractServer*>(arg);
-
-  struct fam_ib_context *ss_ctx = static_cast<struct fam_ib_context *>(instance->fam_ib_ctx);
+  struct fam_ib_context *ss_ctx = instance->fam_ib_ctx;
 
   struct ibv_cq *cq = ss_ctx->cq;
   struct ibv_wc wc;
 
+  BOOST_LOG_TRIVIAL(info) << "!";
+ 
   while (1) {//! should_disconnect
-    TEST_NZ(ibv_get_cq_event(ss_ctx->comp_channel, &cq, reinterpret_cast <void**>(&(instance->fam_ib_ctx))));
+    //TEST_NZ(ibv_get_cq_event(ss_ctx->comp_channel, &cq, reinterpret_cast <void**>(&(instance->fam_ib_ctx))));
+    //TEST_NZ(ibv_get_cq_event(ss_ctx->comp_channel, &cq, reinterpret_cast <void**>(&ss_ctx)));
+
+    BOOST_LOG_TRIVIAL(info) << "before get cq_event !";
+    void * ev_ctx; // no context associate to this cq
+    TEST_NZ(ibv_get_cq_event(ss_ctx->comp_channel, &cq, &ev_ctx));
+    BOOST_LOG_TRIVIAL(info) << "ctx were touched!";
     ibv_ack_cq_events(cq, 1);
     TEST_NZ(ibv_req_notify_cq(cq, 0));
 
@@ -101,10 +108,14 @@ void AbstractServer::build_params(struct rdma_conn_param *params)
 
 void AbstractServer::build_connection(struct rdma_cm_id *id, bool is_qp0)
 {
+  BOOST_LOG_TRIVIAL(info) << "build_connection ";
   struct ibv_qp_init_attr qp_attr;
-
+  if(!fam_ib_ctx){
+  	BOOST_LOG_TRIVIAL(info) << "fam_ib_ctx == 0";
+  }
   build_context(id->verbs);// guaranteed to only go thru on qp0
   build_qp_attr(&qp_attr, is_qp0);// do special handling on qp > 0
+  BOOST_LOG_TRIVIAL(info) << "pd:"<<fam_ib_ctx->pd;
 
   TEST_NZ(rdma_create_qp(id, fam_ib_ctx->pd, &qp_attr));
 }
@@ -140,6 +151,7 @@ void AbstractServer::build_context(struct ibv_context *verbs)
 
     return;
   }
+  BOOST_LOG_TRIVIAL(info) << "build_context";
 
   fam_ib_ctx = static_cast<struct fam_ib_context *>(malloc(sizeof(struct fam_ib_context)));
 
@@ -171,6 +183,7 @@ void AbstractServer::event_loop(struct rdma_event_channel *ec, int exit_on_disco
   bool latch4 = false;
 
   while (rdma_get_cm_event(ec, &event) == 0) {
+    BOOST_LOG_TRIVIAL(info) << "loop ";
     struct rdma_cm_event event_copy;
 
     memcpy(&event_copy, event, sizeof(*event));
@@ -198,7 +211,11 @@ void AbstractServer::event_loop(struct rdma_event_channel *ec, int exit_on_disco
       if(!latch3) on_connection(event_copy.id);
       BOOST_LOG_TRIVIAL(info) << "RDMA_CM Established, id:"<<event_copy.id;
       latch3 = true;
+      if(fam_ib_ctx==NULL){
+      	BOOST_LOG_TRIVIAL(info) << "!!!!!!!!!!!!!!!!!";
+      }
       fam_ib_ctx->connections++;
+      BOOST_LOG_TRIVIAL(info) << "connections:"<<fam_ib_ctx->connections;
     } else if (event_copy.event == RDMA_CM_EVENT_DISCONNECTED) {// Runs on both
       rdma_destroy_qp(event_copy.id);
       BOOST_LOG_TRIVIAL(info) << "Connection disconnected, id:"<<event_copy.id;
