@@ -130,7 +130,7 @@ void on_pre_conn(struct rdma_cm_id *id)
 }
 
 
-void test_all_qp(std::vector<rdma_cm_id*> * cm_ids, ibv_cq* cq)
+void test_all_qp(std::vector<rdma_cm_id*> * cm_ids)
 {
   struct ibv_send_wr *bad_wr = NULL;
   struct ibv_send_wr wr;
@@ -148,8 +148,11 @@ void test_all_qp(std::vector<rdma_cm_id*> * cm_ids, ibv_cq* cq)
     // wr.wr_id = reinterpret_cast<uintptr_t>(av);
     wr.opcode = IBV_WR_RDMA_READ;
     wr.send_flags = IBV_SEND_SIGNALED;// can change for selective signaling
+    
     wr.wr.rdma.remote_addr = ctx->peer_addr + 0;
     wr.wr.rdma.rkey = ctx->peer_rkey;
+    BOOST_LOG_TRIVIAL(info)<<  "remote_addr:"<<ctx->peer_addr;
+    BOOST_LOG_TRIVIAL(info)<<  "rkey:"<<ctx->peer_rkey;
 
     wr.sg_list = &sge;
     wr.num_sge = 1;
@@ -177,7 +180,7 @@ void test_all_qp(std::vector<rdma_cm_id*> * cm_ids, ibv_cq* cq)
     }
     bool is_done = false;
     while (!is_done) {
-      int cq_received_num = ibv_poll_cq(cq, 1, &wc);
+      int cq_received_num = ibv_poll_cq(id->send_cq, 1, &wc);
       if (cq_received_num != 0) {
         is_done = true;
         if (wc.status == IBV_WC_SUCCESS) {
@@ -187,7 +190,7 @@ void test_all_qp(std::vector<rdma_cm_id*> * cm_ids, ibv_cq* cq)
           BOOST_LOG_TRIVIAL(info)
             << "The target id read from RDMA server is :" << test_target_id;
         } else {
-          BOOST_LOG_TRIVIAL(fatal) << "test failed! status:" << wc.status;
+          BOOST_LOG_TRIVIAL(fatal) << "test failed! status:" << ibv_wc_status_str(wc.status);
           rc_die("poll_cq: test status is not IBV_WC_SUCCESS");
         }
       }
@@ -275,7 +278,7 @@ void on_completion(struct ibv_wc *wc, struct ibv_cq * cq)
       
       // init_rdma_heap(ctx);
       ctx->pd = rc_get_pd();// grab a ref to the pd
-      temporary_test(wc, cq);
+      //temporary_test(wc, cq);
 
       uint32_t const num_vertices = famgraph::get_num_verts(ctx->index_file);
       BOOST_LOG_TRIVIAL(info) << "|V| " << num_vertices;
@@ -289,7 +292,7 @@ void on_completion(struct ibv_wc *wc, struct ibv_cq * cq)
 
       BOOST_LOG_TRIVIAL(info) << "Waiting all " << (ctx->connections+1) <<" connections ready...";
       while (rc_get_num_connections() < ctx->connections + 1) {}
-      test_all_qp(&ctx->cm_ids);
+      //test_all_qp(&ctx->cm_ids);
 
 
       BOOST_LOG_TRIVIAL(info) << "connections: " << rc_get_num_connections();

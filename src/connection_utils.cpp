@@ -228,7 +228,7 @@ void *poll_cq(void *ctx)
         s_on_completion_cb(&wc, cq);
       }
       else{
-        BOOST_LOG_TRIVIAL(fatal) << "poll_cq: status:"<<wc.status;
+        BOOST_LOG_TRIVIAL(fatal) << "poll_cq: status:"<<ibv_wc_status_str(wc.status);
         rc_die("poll_cq: status is not IBV_WC_SUCCESS");
 		}
     }
