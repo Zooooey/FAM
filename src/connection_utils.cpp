@@ -224,10 +224,13 @@ void *poll_cq(void *ctx)
     TEST_NZ(ibv_req_notify_cq(cq, 0));
 
     while (ibv_poll_cq(cq, 1, &wc)) {
-      if (wc.status == IBV_WC_SUCCESS)
-        s_on_completion_cb(&wc);
-      else
+      if (wc.status == IBV_WC_SUCCESS){
+        s_on_completion_cb(&wc, cq);
+      }
+      else{
+        BOOST_LOG_TRIVIAL(fatal) << "poll_cq: status:"<<ibv_wc_status_str(wc.status);
         rc_die("poll_cq: status is not IBV_WC_SUCCESS");
+		}
     }
   }
 

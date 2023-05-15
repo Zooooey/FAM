@@ -138,7 +138,7 @@ void AbstractServer::build_qp_attr(struct ibv_qp_init_attr *qp_attr, bool is_qp0
   qp_attr->qp_type = IBV_QPT_RC;
 
   qp_attr->cap.max_send_wr = 40;// max from ibv_devinfo: max_qp_wr: 16351
-  qp_attr->cap.max_recv_wr = 160;
+  qp_attr->cap.max_recv_wr = 1600;
   qp_attr->cap.max_send_sge = 1;
   qp_attr->cap.max_recv_sge = 1;
   qp_attr->sq_sig_all = 0;// shouldn't need this explicitly
@@ -190,10 +190,10 @@ void AbstractServer::event_loop(struct rdma_event_channel *ec, int exit_on_disco
     rdma_ack_cm_event(event);
 
     if (event_copy.event == RDMA_CM_EVENT_ADDR_RESOLVED) {// Runs on client
-      build_connection(event_copy.id, !latch0);
+      this->build_connection(event_copy.id, !latch0);
       BOOST_LOG_TRIVIAL(debug) << "CLIENT1";
 
-      if (!latch0) on_pre_conn(event_copy.id);
+      if (!latch0) this->on_pre_conn(event_copy.id);
       static long TIMEOUT = 500;
       TEST_NZ(rdma_resolve_route(event_copy.id, TIMEOUT));
       latch0 = true;
@@ -201,14 +201,14 @@ void AbstractServer::event_loop(struct rdma_event_channel *ec, int exit_on_disco
       TEST_NZ(rdma_connect(event_copy.id, &cm_params));
       BOOST_LOG_TRIVIAL(debug) << "CLIENT2";
     } else if (event_copy.event == RDMA_CM_EVENT_CONNECT_REQUEST) {// Runs on server
-      build_connection(event_copy.id, !latch2);
+      this->build_connection(event_copy.id, !latch2);
       BOOST_LOG_TRIVIAL(info) << "RDMA_CM Connect request received!";
-      if (!latch2)on_pre_conn(event_copy.id);
+      if (!latch2)this->on_pre_conn(event_copy.id);
 
       TEST_NZ(rdma_accept(event_copy.id, &cm_params));
       latch2 = true;
     } else if (event_copy.event == RDMA_CM_EVENT_ESTABLISHED) {// Runs on both
-      if(!latch3) on_connection(event_copy.id);
+      if(!latch3) this->on_connection(event_copy.id);
       BOOST_LOG_TRIVIAL(info) << "RDMA_CM Established, id:"<<event_copy.id;
       latch3 = true;
       if(fam_ib_ctx==NULL){
@@ -219,7 +219,7 @@ void AbstractServer::event_loop(struct rdma_event_channel *ec, int exit_on_disco
     } else if (event_copy.event == RDMA_CM_EVENT_DISCONNECTED) {// Runs on both
       rdma_destroy_qp(event_copy.id);
       BOOST_LOG_TRIVIAL(info) << "Connection disconnected, id:"<<event_copy.id;
-      if(!latch4) on_disconnect(event_copy.id);
+      if(!latch4) this->on_disconnect(event_copy.id);
       rdma_destroy_id(event_copy.id);
 
       if (exit_on_disconnect) break;

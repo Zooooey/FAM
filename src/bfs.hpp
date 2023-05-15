@@ -27,7 +27,7 @@
 #define TRACE_CACHE 0
 #define TRACE_VERTEX_ID 1
 #define DEBUG_EVERY_VERTEX 0
-#define STOP_ROUND 2
+#define STOP_ROUND 0
 
 using namespace std;
 namespace bfs {
